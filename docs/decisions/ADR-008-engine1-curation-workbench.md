@@ -55,8 +55,8 @@ Local execution limit:
 ## Implementation status
 
 - Implemented in the checkout: SQLAlchemy models, Alembic migration, repository protocol, in-memory unit-test store, PostgreSQL store, health detail, fixture preview, import endpoint, and the first React pending-review screen.
-- Not locally verified: applying the migration or reading back a committed row. This machine cannot run PostgreSQL.
-- CI-verified PostgreSQL behavior: recorded only after the `postgres` job on `engine1-curation-workbench` is green. Until that job is observed, do not describe the database as verified.
+- Locally unavailable infrastructure: this machine has no `psql` and no Docker. The migration has not been applied here, and `compose.yaml` has not been run here.
+- CI-verified PostgreSQL behavior: GitHub Actions run [37054187538](https://github.com/Naks-bro/threat-intel-iam-attack-path-verifier/actions/runs/37054187538) on commit `edf546e` is green. The `postgres` job applied the migration and the import test passed. The `unit` job passed without a database URL. An earlier run on `d41074a` failed and is not the verification.
 
 ## Consequences
 

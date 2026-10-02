@@ -27,7 +27,7 @@ The statements in this section describe this implementation repository after the
 - ADRs 001–008 are **Proposed**. ADR-008 records the curation workbench. The checkout contains the PostgreSQL mapping, Alembic migration, and a first React pending-review screen. A local PostgreSQL server has not been run here. CI is the place that can verify the migration.
 - Confirm the slice with `python -m pytest`, `python -m ruff check .`, and `python -m mypy src` from a Python 3.12 virtual environment.
 
-**Verified** on 2026-10-03 with Python 3.12.10 in this checkout, including the workbench unit tests. The PostgreSQL integration test was skipped locally and is not yet CI-verified:
+**Verified** on 2026-10-03 with Python 3.12.10 in this checkout, including the workbench unit tests. The PostgreSQL integration test was skipped locally. It later passed in GitHub Actions run [37054187538](https://github.com/Naks-bro/threat-intel-iam-attack-path-verifier/actions/runs/37054187538):
 
 - `python -m ruff check .` — all checks passed
 - `python -m ruff format --check .` — 92 files already formatted
@@ -42,7 +42,7 @@ The statements in this section describe this implementation repository after the
 - `strength` in the current catalog is a distinct-source count. It is not an overall confidence score.
 - Approval is not durable. The reviewer id is caller-supplied. The older review pages remain server-rendered HTML.
 - AWS Threat Technique Catalog ingestion, scheduled source runs, and an AI checker are not in this checkout. The PostgreSQL mapping, Alembic migration, and first React screen are in this checkout.
-- On 2026-10-03 this machine had no `psql` and no `docker`. That is a local execution limit. The workbench migration and PostgreSQL job are in the checkout, and a local database has not been exercised here.
+- On 2026-10-03 this machine had no `psql` and no `docker`. That is a local execution limit. GitHub Actions run [37054187538](https://github.com/Naks-bro/threat-intel-iam-attack-path-verifier/actions/runs/37054187538) applied the migration and passed the PostgreSQL import test. A local database has not been exercised here.
 
 ## Accepted project baseline
 
