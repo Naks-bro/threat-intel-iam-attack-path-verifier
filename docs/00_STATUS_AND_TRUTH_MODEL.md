@@ -24,19 +24,32 @@ The statements in this section describe this implementation repository after the
 - Engine 1 can load one pinned local technique file, reject a hash mismatch or unsafe text, propose a pending rule from a code allowlist, show that proposal on a review page, and export an `ApprovedRule` only after a separate human approval request. It also loads a pinned 50-row Enterprise ATT&CK 19.2 IaaS dataset and joins pinned OWASP short names, one keyless NVD page, and CISA KEV catalog metadata into source nodes. Strength counts distinct source families. The automated join stores a compact catalog whose rows are stated as technique, weakness, vulnerability, or catalog. A model checker has not run. Those rows stay `no_rule_yet`. `POST /v1/rules/intake` does not approve and does not fetch a URL. Request handling does not download the feeds. The reported HTML parser remains **Reported/unverified**.
 - Engine 2 can normalize synthetic IAM records into an `IAMGraphSnapshot`, record an unevaluated permissions boundary, emit an exact `service:*.amazonaws.com` trust, reconcile node and edge counts, match the local verdict of the hand-built fixtures, and report capability-edge precision and recall. A twelve-action read-only IAM template is tested and not attached. Live AWS collection is disabled and makes no API call. Neo4j is not implemented.
 - The reported Engine 1 parser from the chats remains **Reported/unverified**. It was not present in the curated folder and was not imported.
-- ADRs 001–009 are **Proposed**. ADR-009 supersedes the product direction in ADR-008. The foundry schema in that ADR is not implemented yet. The checkout still contains the single-record workbench checkpoint. A local PostgreSQL server has not been run here.
+- ADRs 001–009 are **Proposed**. ADR-009 supersedes the product direction in ADR-008. The first foundry slice is in this checkout: a pinned Enterprise ATT&CK 19.2 extract, an AWS Service Reference v1.4 extract for selected IAM and STS actions, and a redacted Stratus metadata extract. It derives three attack primitives, compiles `rule_additional_cloud_credentials` as proposed, and marks an experimental publication when the deterministic checks and the fake verifier pass. T1548 is rejected as an IAM mapping. The AWS Threat Technique Catalog is not ingested. The other rule families, optional validators, scheduler, and stable publication are not implemented. Migration `20261003_0002` replaces the checkpoint tables. A local PostgreSQL server has not been run here.
 - Confirm the slice with `python -m pytest`, `python -m ruff check .`, and `python -m mypy src` from a Python 3.12 virtual environment.
 
-**Verified** on 2026-10-03 with Python 3.12.10 in this checkout, including the workbench unit tests. The PostgreSQL integration test was skipped locally. It later passed in GitHub Actions run [37054187538](https://github.com/Naks-bro/threat-intel-iam-attack-path-verifier/actions/runs/37054187538):
+**Verified** on 2026-10-03 with Python 3.12.10 in this checkout. The foundry PostgreSQL test is deselected locally because `FYP_DATABASE_URL` is not set. The earlier checkpoint PostgreSQL run [37054187538](https://github.com/Naks-bro/threat-intel-iam-attack-path-verifier/actions/runs/37054187538) does not cover migration `20261003_0002`.
 
 - `python -m ruff check .` — all checks passed
-- `python -m ruff format --check .` — 92 files already formatted
-- `python -m pytest` — 119 passed, 1 skipped, with one Starlette deprecation warning about the `httpx` test client. The skipped test is the PostgreSQL import test, because `FYP_DATABASE_URL` is not set here.
-- `python -m mypy src` — no issues found in 45 source files
+- `python -m ruff format --check .` — files already formatted
+- `python -m pytest -m "not postgres"` — 125 passed, 1 deselected, with one Starlette deprecation warning about the `httpx` test client
+- `python -m mypy src` — no issues found in 50 source files
+- `npm test` in `frontend` — 1 passed
+- `npm run build` in `frontend` — type-check and Vite build completed
+
+## Engine 1 foundry slice
+
+**Verified** locally for the pinned computation and the React component test. **Proposed** as the product direction in ADR-009. PostgreSQL persistence for this slice is not verified on this machine.
+
+- Sources in the pin: MITRE ATT&CK Enterprise 19.2 parent collection `sha256:dc1639caa5501d720e280cf1cbd8fbe009884a0c9b3e6e9ed9d0c25166c3d8f4`, reduced to T1098, T1098.001, T1098.003, and T1548. AWS Service Reference `v1.4` for `iam` and `sts`, limited to the actions the three behaviors name. Stratus Red Team metadata for `aws.persistence.iam-backdoor-user`, `aws.persistence.iam-backdoor-role`, and `aws.persistence.iam-create-backdoor-role`, stored as a redacted field extract. The original markdown is not committed because an example account ARN was present.
+- Primitives: `additional_cloud_credentials` mapped to T1098.001 and compiled; `backdoored_role_creation` mapped to T1098.003 and not compiled; `trust_policy_backdoor` left unmapped because a trust-policy edit is not additional role creation.
+- The compiled rule stays `status=proposed`. Engine 3 does not receive it unless experimental consumption is explicitly requested. The AI path is a fake schema verifier. It does not call a model and it ignores source text.
+- Corpus `iam-corpus-0.1` has one positive and two near-negative scenarios for `iam:CreateAccessKey`. Its precision and recall describe that corpus only.
+- `GET /v1/foundry/overview` computes that result from the pins. Without `FYP_DATABASE_URL` the response is labeled not stored. `POST /v1/foundry/runs` returns 503 and does not pretend to save.
+- AWS Threat Technique Catalog HTML exists. On 2026-10-03 `https://github.com/aws-samples/threat-technique-catalog-for-aws` returned 404 and no versioned JSON export was confirmed. It is not an adapter.
 
 ## Engine 1 audit
 
-**Verified** for the local prototype. **Proposed** for the workbench in ADR-008. The first store and pending-review screen are in this checkout. A local PostgreSQL server has not applied the migration.
+**Verified** for the local prototype. **Proposed** for the checkpoint in ADR-008, which ADR-009 supersedes as product direction. The checkpoint routes remain. Migration `20261003_0002` drops those tables on the next upgrade. A local PostgreSQL server has not applied either migration.
 
 - Reuse the pinned artifacts, the T1548 allowlist, fail-closed intake, and the in-memory approval export.
 - `strength` in the current catalog is a distinct-source count. It is not an overall confidence score.
@@ -65,7 +78,7 @@ None of those implementation files or test outputs exist in this folder. Treat t
 
 1. **NVD + CISA KEV + MITRE is not the agreed primary source set.** It was an assistant proposal later corrected in the same chat. NVD and KEV are optional enrichment candidates.
 2. **OWASP Cloud-Native Top 10 is guidance, not a live CTI feed.** It may supply curated patterns and controls, but requires a versioned extraction/curation process.
-3. **AWS Threat Technique Catalog is real and relevant.** AWS CIRT launched it as an AWS-specific extension based on ATT&CK Cloud, with observed techniques, mitigations, and detections. The ingestion method still needs to be proven against the catalog's actual published format.
+3. **AWS Threat Technique Catalog HTML is not an ingestion source.** The public HTML catalog exists. On 2026-10-03 the expected `aws-samples` GitHub repository returned 404, and no maintained machine-readable export was confirmed. Keyword scraping is not a substitute.
 4. **IAM Policy Simulator is a pre-check, not ground truth.** It does not make a real service request and can differ from live behavior for advanced configurations.
 5. **CloudGoat cannot generically validate every discovered path.** It provides curated intentionally vulnerable scenarios. A path can be sandbox-tested only if it maps to an available or deliberately implemented scenario.
 6. **Betweenness centrality is not a vulnerability score.** It measures how often a node lies on shortest paths. Any use in security prioritization requires an empirical hypothesis and ablation against simpler baselines.

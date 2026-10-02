@@ -2,7 +2,7 @@
 
 ## Status
 
-Proposed. This supersedes the product direction in ADR-008. It does not by itself implement the foundry. No non-ephemeral PostgreSQL database was found on this machine, so the checkpoint schema can be replaced without a data migration.
+Proposed. This supersedes the product direction in ADR-008. The first pinned source-to-experimental-rule slice is in this checkout. It does not implement the remaining rule families, optional third-party validators, a scheduler, stable publication, or a human-labeled benchmark beyond the three-scenario corpus. No non-ephemeral PostgreSQL database was found on this machine, so the checkpoint schema is replaced without a data migration. Local PostgreSQL has not been run.
 
 ## Date
 

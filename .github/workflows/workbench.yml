@@ -23,6 +23,23 @@ jobs:
       - name: Mypy
         run: python -m mypy src
 
+  frontend:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Install
+        working-directory: frontend
+        run: npm ci
+      - name: Test
+        working-directory: frontend
+        run: npm test
+      - name: Build
+        working-directory: frontend
+        run: npm run build
+
   postgres:
     runs-on: ubuntu-latest
     services:
@@ -52,3 +69,21 @@ jobs:
         run: python -m alembic upgrade head
       - name: PostgreSQL tests
         run: python -m pytest -m postgres -o addopts=
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Install frontend
+        working-directory: frontend
+        run: npm ci
+      - name: Install Chromium
+        working-directory: frontend
+        run: npx playwright install --with-deps chromium
+      - name: Portal flow
+        run: |
+          python -m uvicorn fyp_iam.api.app:create_app --factory --host 127.0.0.1 --port 8765 &
+          for _ in 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15; do
+            curl -sf http://127.0.0.1:8765/health && break
+            sleep 1
+          done
+          cd frontend
+          npx playwright test

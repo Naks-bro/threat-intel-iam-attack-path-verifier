@@ -101,7 +101,18 @@ button:disabled { opacity: 0.6; cursor: wait; }
 
 .notice.bad { border-color: var(--red); color: var(--red); }
 
+.shell { display: grid; grid-template-columns: 180px 1fr; min-height: 100vh; }
+aside { border-right: 1px solid var(--line); padding: 1rem; background: #0e141b; }
+.brand { color: var(--cyan); font-weight: 600; margin: 0 0 0.8rem; }
+.nav { display: block; width: 100%; text-align: left; margin-bottom: 0.35rem; border-color: transparent; }
+.nav.active { border-color: var(--cyan); color: var(--cyan); }
+table { width: 100%; border-collapse: collapse; }
+th, td { border-bottom: 1px solid var(--line); text-align: left; padding: 0.4rem; vertical-align: top; }
+th { color: var(--muted); font-weight: 600; }
+
 @media (max-width: 800px) {
+  .shell { display: block; }
+  aside { border-right: 0; border-bottom: 1px solid var(--line); }
   header, .stages, .columns { display: block; }
   .stage, section { margin-bottom: 0.5rem; }
 }
