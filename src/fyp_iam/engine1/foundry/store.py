@@ -335,6 +335,7 @@ def _relations(
     claim_ids: dict[str, str],
 ) -> dict[str, str]:
     relation_ids: dict[str, str] = {}
+    pending_claims: list[tuple[str, str]] = []
     for item in _object_list(overview["relations"]):
         left = _text(item["from_native_id"])
         right = _text(item["to_native_id"])
@@ -354,7 +355,10 @@ def _relations(
         relation_ids[f"{left}:{right}"] = relation_id
         claim_id = claim_ids.get(f"{left}:{right}")
         if claim_id is not None:
-            session.add(EvidenceRelationClaimRow(relation_id=relation_id, claim_id=claim_id))
+            pending_claims.append((relation_id, claim_id))
+    session.flush()
+    for relation_id, claim_id in pending_claims:
+        session.add(EvidenceRelationClaimRow(relation_id=relation_id, claim_id=claim_id))
     session.flush()
     return relation_ids
 
@@ -365,6 +369,7 @@ def _primitives(
     relation_ids: dict[str, str],
 ) -> dict[str, str]:
     primitive_ids: dict[str, str] = {}
+    pending_links: list[tuple[str, str]] = []
     for item in _object_list(overview["primitives"]):
         key = _text(item["primitive_key"])
         primitive_id = stable_id("primitive", key, PARSER)
@@ -388,9 +393,10 @@ def _primitives(
         behavior = _text(item["behavior_id"])
         for rel_key, relation_id in relation_ids.items():
             if rel_key.startswith(behavior + ":"):
-                session.add(
-                    PrimitiveRelationRow(primitive_id=primitive_id, relation_id=relation_id)
-                )
+                pending_links.append((primitive_id, relation_id))
+    session.flush()
+    for primitive_id, relation_id in pending_links:
+        session.add(PrimitiveRelationRow(primitive_id=primitive_id, relation_id=relation_id))
     session.flush()
     return primitive_ids
 
