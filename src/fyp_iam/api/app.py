@@ -29,6 +29,11 @@ from fyp_iam.engine1.intake import (
     validate_candidate,
 )
 from fyp_iam.engine1.opportunities import OpportunityDataset, build_opportunities
+from fyp_iam.engine1.workbench.config import database_url_from_env
+from fyp_iam.engine1.workbench.db import PostgresWorkbenchStore, database_status
+from fyp_iam.engine1.workbench.domain import WorkbenchView
+from fyp_iam.engine1.workbench.errors import DatabaseUnavailable
+from fyp_iam.engine1.workbench.services import build_snapshot, view_from_snapshot
 from fyp_iam.engine2.normalize import normalize_with_coverage
 from fyp_iam.engine3.pipeline import analyze
 from fyp_iam.engine4.manifest import LocalFixtureManifest, build_local_fixture_manifest
@@ -47,8 +52,14 @@ from fyp_iam.fixtures.loader import (
     load_fixture,
 )
 
+_UNSET = object()
 
-def create_app(fixture_dir: Path | None = None) -> FastAPI:
+
+def create_app(
+    fixture_dir: Path | None = None,
+    *,
+    database_url: str | None | object = _UNSET,
+) -> FastAPI:
     application = FastAPI(
         title="FYP IAM local verification",
         version=__version__,
@@ -58,9 +69,16 @@ def create_app(fixture_dir: Path | None = None) -> FastAPI:
     )
     directory = fixture_dir or default_fixture_dir()
     application.state.fixture_dir = directory
+    if database_url is _UNSET:
+        resolved_url = database_url_from_env()
+    elif isinstance(database_url, str):
+        resolved_url = database_url
+    else:
+        resolved_url = None
 
     @application.get("/health")
     def health() -> dict[str, str]:
+        state, detail = database_status(resolved_url)
         return {
             "status": "ok",
             "mode": "local_fixtures",
@@ -68,8 +86,41 @@ def create_app(fixture_dir: Path | None = None) -> FastAPI:
             "engine1": "local_intake",
             "engine2": "synthetic_normalizer",
             "neo4j": "not_connected",
+            "database": state,
+            "database_detail": detail,
             "version": __version__,
         }
+
+    @application.get("/v1/workbench/fixtures/{pin_id}", response_model=WorkbenchView)
+    def workbench_fixture(pin_id: str) -> WorkbenchView:
+        try:
+            snapshot = build_snapshot(pin_id)
+        except IntakeError as exc:
+            status_code = 404 if exc.code == "unknown_artifact" else 400
+            raise HTTPException(status_code=status_code, detail=exc.code) from exc
+        return view_from_snapshot(snapshot, persisted=False)
+
+    @application.post("/v1/workbench/imports/{pin_id}", response_model=WorkbenchView)
+    def import_workbench_pin(pin_id: str) -> WorkbenchView:
+        state, _detail = database_status(resolved_url)
+        if state != "ok" or resolved_url is None:
+            raise HTTPException(status_code=503, detail="database_unavailable")
+        try:
+            snapshot = build_snapshot(pin_id)
+        except IntakeError as exc:
+            status_code = 404 if exc.code == "unknown_artifact" else 400
+            raise HTTPException(status_code=status_code, detail=exc.code) from exc
+        store = PostgresWorkbenchStore(resolved_url)
+        try:
+            store.save_import(snapshot)
+            stored = store.get_import(pin_id)
+        except DatabaseUnavailable as exc:
+            raise HTTPException(status_code=503, detail=exc.code) from exc
+        finally:
+            store.dispose()
+        if stored is None:
+            raise HTTPException(status_code=503, detail="database_unavailable")
+        return view_from_snapshot(stored, persisted=True)
 
     @application.post("/v1/analyses", response_model=AnalysisReport)
     def create_analysis(request: AnalyzeRequest) -> AnalysisReport:
