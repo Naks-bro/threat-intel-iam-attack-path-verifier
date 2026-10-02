@@ -78,6 +78,8 @@ jobs:
       - name: Install Chromium
         working-directory: frontend
         run: npx playwright install --with-deps chromium
+      - name: Clear foundry rows
+        run: python -c "import os; from sqlalchemy import create_engine, text; from fyp_iam.engine1.foundry.models import Base; engine = create_engine(os.environ['FYP_DATABASE_URL']); names = ', '.join(table.name for table in Base.metadata.sorted_tables); conn = engine.connect(); trans = conn.begin(); conn.execute(text('TRUNCATE ' + names + ' RESTART IDENTITY CASCADE')); trans.commit(); conn.close()"
       - name: Portal flow
         run: |
           python -m uvicorn fyp_iam.api.app:create_app --factory --host 127.0.0.1 --port 8765 &
