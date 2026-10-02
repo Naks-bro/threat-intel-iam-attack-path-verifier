@@ -27,7 +27,7 @@ The statements in this section describe this implementation repository after the
 - ADRs 001–009 are **Proposed**. ADR-009 supersedes the product direction in ADR-008. The first foundry slice is in this checkout: a pinned Enterprise ATT&CK 19.2 extract, an AWS Service Reference v1.4 extract for selected IAM and STS actions, and a redacted Stratus metadata extract. It derives three attack primitives, compiles `rule_additional_cloud_credentials` as proposed, and marks an experimental publication when the deterministic checks and the fake verifier pass. T1548 is rejected as an IAM mapping. The AWS Threat Technique Catalog is not ingested. The other rule families, optional validators, scheduler, and stable publication are not implemented. Migration `20261003_0002` replaces the checkpoint tables. A local PostgreSQL server has not been run here.
 - Confirm the slice with `python -m pytest`, `python -m ruff check .`, and `python -m mypy src` from a Python 3.12 virtual environment.
 
-**Verified** on 2026-10-03 with Python 3.12.10 in this checkout. The foundry PostgreSQL test is deselected locally because `FYP_DATABASE_URL` is not set. The earlier checkpoint PostgreSQL run [37054187538](https://github.com/Naks-bro/threat-intel-iam-attack-path-verifier/actions/runs/37054187538) does not cover migration `20261003_0002`.
+**Verified** on 2026-10-03 with Python 3.12.10 in this checkout. The foundry PostgreSQL test is deselected locally because `FYP_DATABASE_URL` is not set. GitHub Actions run [37061261254](https://github.com/Naks-bro/threat-intel-iam-attack-path-verifier/actions/runs/37061261254) passed the unit job, the frontend job, and the PostgreSQL job, including the portal flow. The earlier checkpoint run [37054187538](https://github.com/Naks-bro/threat-intel-iam-attack-path-verifier/actions/runs/37054187538) does not cover migration `20261003_0002`.
 
 - `python -m ruff check .` — all checks passed
 - `python -m ruff format --check .` — files already formatted
@@ -38,7 +38,7 @@ The statements in this section describe this implementation repository after the
 
 ## Engine 1 foundry slice
 
-**Verified** locally for the pinned computation and the React component test. **Proposed** as the product direction in ADR-009. PostgreSQL persistence for this slice is not verified on this machine.
+**Verified** locally for the pinned computation and the React component test. **Proposed** as the product direction in ADR-009. PostgreSQL persistence is verified in GitHub Actions run [37061261254](https://github.com/Naks-bro/threat-intel-iam-attack-path-verifier/actions/runs/37061261254), including migration `20261003_0002`, one experimental publication, and the Playwright portal flow. A local PostgreSQL server has still not been run.
 
 - Sources in the pin: MITRE ATT&CK Enterprise 19.2 parent collection `sha256:dc1639caa5501d720e280cf1cbd8fbe009884a0c9b3e6e9ed9d0c25166c3d8f4`, reduced to T1098, T1098.001, T1098.003, and T1548. AWS Service Reference `v1.4` for `iam` and `sts`, limited to the actions the three behaviors name. Stratus Red Team metadata for `aws.persistence.iam-backdoor-user`, `aws.persistence.iam-backdoor-role`, and `aws.persistence.iam-create-backdoor-role`, stored as a redacted field extract. The original markdown is not committed because an example account ARN was present.
 - Primitives: `additional_cloud_credentials` mapped to T1098.001 and compiled; `backdoored_role_creation` mapped to T1098.003 and not compiled; `trust_policy_backdoor` left unmapped because a trust-policy edit is not additional role creation.
