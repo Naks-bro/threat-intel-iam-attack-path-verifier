@@ -1,0 +1,41 @@
+{
+  "redaction": "Example ARN text and account ids were removed before this file was written.",
+  "original_sha256": [
+    "sha256:f7a628b5e53634e72e075f3a18b2f056fb5d5385e17cd5f1e553f7241dd12602",
+    "sha256:ada8e95e78f2e70eec696a8c40e1f6de1959d8559981beaf94494565b98987cd",
+    "sha256:0f47227b6c24be8ab3fad07f30c2f7a8187012ae0cd1400c02e5e2bfada23c51"
+  ],
+  "techniques": [
+    {
+      "id": "aws.persistence.iam-backdoor-user",
+      "title": "Create an Access Key on an IAM User",
+      "actions": [
+        "iam:CreateAccessKey"
+      ],
+      "cited_technique_ids": [
+        "T1098.001"
+      ]
+    },
+    {
+      "id": "aws.persistence.iam-backdoor-role",
+      "title": "Backdoor an IAM Role",
+      "actions": [
+        "iam:UpdateAssumeRolePolicy"
+      ],
+      "cited_technique_ids": [
+        "T1098.003"
+      ]
+    },
+    {
+      "id": "aws.persistence.iam-create-backdoor-role",
+      "title": "Create a backdoored IAM Role",
+      "actions": [
+        "iam:AttachRolePolicy",
+        "iam:CreateRole"
+      ],
+      "cited_technique_ids": [
+        "T1098.003"
+      ]
+    }
+  ]
+}

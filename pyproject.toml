@@ -29,7 +29,7 @@ dev = [
 where = ["src"]
 
 [tool.setuptools.package-data]
-fyp_iam = ["engine1/artifacts/*.json"]
+fyp_iam = ["engine1/artifacts/*.json", "engine1/foundry/pins/*.json"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
