@@ -28,7 +28,8 @@ class SourceRow(Base):
         UniqueConstraint("source_key"),
         CheckConstraint("authority_tier in (1, 2, 3)", name="ck_sources_tier"),
         CheckConstraint(
-            "source_type in ('taxonomy','service_reference','community_behavior','contextual')",
+            "source_type in ('taxonomy','service_reference','community_behavior',"
+            "'contextual','threat_catalog')",
             name="ck_sources_type",
         ),
     )
@@ -130,8 +131,9 @@ class NormalizedEntityRow(Base):
     __table_args__ = (
         UniqueConstraint("entity_type", "native_id", "source_version_id"),
         CheckConstraint(
-            "entity_type in ('technique','cloud_behavior','aws_action','aws_resource',"
-            "'condition_key','vulnerability','mitigation','attack_primitive_ref')",
+            "entity_type in ('technique','attack_behavior','cloud_behavior','aws_service',"
+            "'aws_action','aws_resource','condition_key','vulnerability','mitigation',"
+            "'attack_primitive_ref','scenario')",
             name="ck_entity_type",
         ),
     )
@@ -354,6 +356,16 @@ class PublicationRow(Base):
     evidence_snapshot_hash: Mapped[str] = mapped_column(String(80))
     channel: Mapped[str] = mapped_column(String(16))
     published_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
+
+
+class AISuggestionRow(Base):
+    __tablename__ = "ai_suggestions"
+
+    suggestion_id: Mapped[str] = mapped_column(String(80), primary_key=True)
+    verification_id: Mapped[str] = mapped_column(ForeignKey("ai_verifications.verification_id"))
+    rule_version_id: Mapped[str] = mapped_column(ForeignKey("rule_versions.version_id"))
+    suggestion_json: Mapped[str] = mapped_column(Text)
+    recorded_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
 
 
 class AuditEventRow(Base):

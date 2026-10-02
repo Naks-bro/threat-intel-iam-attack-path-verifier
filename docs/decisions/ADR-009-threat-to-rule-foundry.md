@@ -2,7 +2,7 @@
 
 ## Status
 
-Proposed. This supersedes the product direction in ADR-008. The first pinned source-to-experimental-rule slice is in this checkout. It does not implement the remaining rule families, optional third-party validators, a scheduler, stable publication, or a human-labeled benchmark beyond the three-scenario corpus. No non-ephemeral PostgreSQL database was found on this machine, so the checkpoint schema is replaced without a data migration. Local PostgreSQL has not been run.
+Proposed. This supersedes the product direction in ADR-008. The first pinned source-to-experimental-rule slice is in this checkout. The compiler reads stored entities and relations. The portal reads the registry and does not request a hardcoded artifact id. It does not implement the remaining rule families, optional third-party validators, a scheduler, stable publication, or a human-labeled benchmark beyond the three-scenario corpus. No non-ephemeral PostgreSQL database was found on this machine, so the checkpoint schema is replaced without a data migration. Local PostgreSQL has not been run.
 
 ## Date
 

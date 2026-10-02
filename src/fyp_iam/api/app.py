@@ -20,8 +20,7 @@ from fyp_iam.core.report import AnalysisReport
 from fyp_iam.engine1.catalog import SystemCatalog, load_system_catalog
 from fyp_iam.engine1.dataset import CloudTechniqueDataset, load_cloud_technique_dataset
 from fyp_iam.engine1.errors import IntakeError
-from fyp_iam.engine1.foundry.pipeline import build_foundry
-from fyp_iam.engine1.foundry.store import experimental_publication_count, persist_foundry
+from fyp_iam.engine1.foundry.store import persist_foundry, read_registry, read_rule
 from fyp_iam.engine1.intake import (
     decide_candidate,
     explain_proposal,
@@ -55,6 +54,20 @@ from fyp_iam.fixtures.loader import (
 )
 
 _UNSET = object()
+
+
+def _unavailable_registry(state: str, detail: str) -> dict[str, object]:
+    return {
+        "database": state,
+        "database_detail": detail,
+        "storage": "not_written",
+        "registry": "unavailable",
+        "sources": [],
+        "run": None,
+        "primitives": [],
+        "relations": [],
+        "candidates": [],
+    }
 
 
 def create_app(
@@ -127,16 +140,19 @@ def create_app(
     @application.get("/v1/foundry/overview")
     def foundry_overview() -> dict[str, object]:
         state, detail = database_status(resolved_url)
-        persisted = False
-        if state == "ok" and isinstance(resolved_url, str):
-            persisted = experimental_publication_count(resolved_url) > 0
-        overview = build_foundry(
-            persisted=persisted,
-            storage="postgres" if persisted else "not_written",
-        )
-        overview["database"] = state
-        overview["database_detail"] = detail
-        return overview
+        if state != "ok" or not isinstance(resolved_url, str):
+            return _unavailable_registry(state, detail)
+        return read_registry(resolved_url)
+
+    @application.get("/v1/foundry/rules/{version_id}")
+    def foundry_rule(version_id: str) -> dict[str, object]:
+        state, _detail = database_status(resolved_url)
+        if state != "ok" or not isinstance(resolved_url, str):
+            raise HTTPException(status_code=503, detail="database_unavailable")
+        rule = read_rule(resolved_url, version_id)
+        if rule is None:
+            raise HTTPException(status_code=404, detail="rule_not_found")
+        return rule
 
     @application.post("/v1/foundry/runs")
     def foundry_run() -> dict[str, object]:
@@ -144,12 +160,10 @@ def create_app(
         if state != "ok" or not isinstance(resolved_url, str):
             raise HTTPException(status_code=503, detail="database_unavailable")
         try:
-            overview = persist_foundry(resolved_url)
+            persist_foundry(resolved_url)
+            return read_registry(resolved_url)
         except DatabaseUnavailable as exc:
             raise HTTPException(status_code=503, detail=exc.code) from exc
-        overview["database"] = "ok"
-        overview["database_detail"] = "reachable"
-        return overview
 
     @application.post("/v1/analyses", response_model=AnalysisReport)
     def create_analysis(request: AnalyzeRequest) -> AnalysisReport:

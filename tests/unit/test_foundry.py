@@ -87,17 +87,90 @@ def test_pinned_slice_publishes_one_experimental_rule() -> None:
     assert "attack-t1548-assume-chain" not in str(candidate["rule_id"])
 
 
-def test_overview_does_not_use_the_hardcoded_pin_and_does_not_pretend_to_save() -> None:
+def test_overview_without_a_database_is_empty() -> None:
     client = TestClient(create_app(database_url=None))
     overview = client.get("/v1/foundry/overview")
     assert overview.status_code == 200
     body = overview.json()
-    assert body["storage"] == "not_written"
-    assert body["database"] == "unavailable"
-    publication = body["publication"]
-    assert publication["channel"] == "experimental"
-    assert publication["rule_id"] == "rule_additional_cloud_credentials"
+    assert body["registry"] == "unavailable"
+    assert body["candidates"] == []
     assert "attack-t1548-assume-chain" not in overview.text
     saved = client.post("/v1/foundry/runs")
     assert saved.status_code == 503
     assert saved.json()["detail"] == "database_unavailable"
+
+
+def test_compiler_reads_relations_instead_of_a_pinned_behavior_id() -> None:
+    from fyp_iam.engine1.foundry.compiler import (
+        EntityDraft,
+        RelationDraft,
+        Snapshot,
+        compile_snapshot,
+    )
+
+    snapshot = Snapshot(
+        sources=(),
+        failures=(),
+        entities=(
+            EntityDraft(
+                "attack_behavior",
+                "custom.lab.behavior",
+                "Custom",
+                "stratus-red-team",
+                {},
+            ),
+            EntityDraft(
+                "aws_action",
+                "iam:CreateAccessKey",
+                "iam:CreateAccessKey",
+                "aws-service-reference",
+                {"resources": ["user"]},
+            ),
+            EntityDraft(
+                "technique",
+                "T1098.001",
+                "Additional Cloud Credentials",
+                "mitre-attack",
+                {},
+            ),
+        ),
+        claims=(),
+        relations=(
+            RelationDraft(
+                "custom.lab.behavior",
+                "iam:CreateAccessKey",
+                "uses_action",
+                "preserved-action-field",
+                "0.40",
+                "proposed",
+                "action preserved",
+            ),
+            RelationDraft(
+                "custom.lab.behavior",
+                "T1098.001",
+                "cites_technique",
+                "cited-id-checked-against-stix-name",
+                "0.70",
+                "proposed",
+                "name matches",
+            ),
+        ),
+        payloads={},
+    )
+    compiled = compile_snapshot(snapshot)
+    candidate = compiled["candidate"]
+    assert isinstance(candidate, dict)
+    assert candidate["rule_id"] == "rule_additional_cloud_credentials"
+    blocked = Snapshot(
+        sources=(),
+        failures=(),
+        entities=(
+            EntityDraft(
+                "technique", "T1548", "Abuse Elevation Control Mechanism", "mitre-attack", {}
+            ),
+        ),
+        claims=(),
+        relations=(),
+        payloads={},
+    )
+    assert compile_snapshot(blocked)["candidate"] is None

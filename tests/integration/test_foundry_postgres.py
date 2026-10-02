@@ -8,6 +8,7 @@ from sqlalchemy.orm import Session
 
 from fyp_iam.engine1.foundry.models import (
     EvidenceRelationRow,
+    IngestionRunRow,
     PublicationRow,
     RawArtifactRow,
     ReviewDecisionRow,
@@ -39,6 +40,11 @@ def test_experimental_rule_is_stored_once(monkeypatch: pytest.MonkeyPatch) -> No
             assert all(row.to_entity_id for row in relations)
             reviews = session.scalar(select(func.count()).select_from(ReviewDecisionRow))
             assert reviews == 0
+            failed = session.scalars(
+                select(IngestionRunRow).where(IngestionRunRow.status == "failed")
+            ).all()
+            assert failed
+            assert "repository_not_found" in failed[0].error_json
             payload = session.scalar(select(RawArtifactRow.byte_count).limit(1))
             assert payload is not None and payload > 0
             linked = session.execute(

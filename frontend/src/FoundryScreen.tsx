@@ -1,16 +1,17 @@
 import { useState } from "react";
 
 export type FoundryOverview = {
-  persisted: boolean;
-  storage: string;
   database: string;
   database_detail: string;
+  storage: string;
+  registry: "unavailable" | "empty" | "ready" | "partial";
   sources: Array<{
     source_key: string;
     authority_tier: number;
     source_type: string;
     version_label: string;
     enabled: boolean;
+    last_status?: string;
   }>;
   run: {
     status: string;
@@ -19,7 +20,7 @@ export type FoundryOverview = {
     unchanged_count: number;
     rejected_count: number;
     parser_version: string;
-  };
+  } | null;
   primitives: Array<{
     primitive_key: string;
     outcome_category: string;
@@ -34,22 +35,23 @@ export type FoundryOverview = {
     review_state: string;
     rationale: string;
   }>;
-  candidate: {
+  candidates: Array<{
     rule_id: string;
+    version_id: string;
     semantic_hash: string;
     lifecycle: string;
-  } | null;
+    channel: string;
+  }>;
+};
+
+export type RuleDetail = {
+  rule_id: string;
+  semantic_hash: string;
+  lifecycle: string;
   validations: Array<{ validator_name: string; result: string }>;
-  ai_verification: { provider: string; model: string; verdict: string };
-  publication: { channel: string; rule_id: string } | null;
-  evaluation: {
-    corpus_version: string;
-    candidate_precision: number;
-    candidate_recall: number;
-    false_positive_rate: number;
-    ai_verdict: string;
-    ai_ablation: string;
-  };
+  ai_verification: { provider: string; model: string; verdict: string } | null;
+  publication: { channel: string } | null;
+  scenarios: Array<{ scenario_id: string; expect: string; result: string }>;
 };
 
 const NAV = [
@@ -67,15 +69,23 @@ export type SectionName = (typeof NAV)[number];
 
 export function FoundryScreen({
   overview,
+  rule,
   notice,
   onRun,
+  onOpen,
 }: {
   overview: FoundryOverview;
+  rule: RuleDetail | null;
   notice: string;
   onRun: () => void;
+  onOpen: (versionId: string) => void;
 }) {
   const [section, setSection] = useState<SectionName>("Overview");
   const stored = overview.storage === "postgres";
+  function openCandidate(versionId: string) {
+    setSection("Rule");
+    onOpen(versionId);
+  }
   return (
     <div className="shell">
       <aside>
@@ -103,7 +113,8 @@ export function FoundryScreen({
             {stored ? "Stored in PostgreSQL" : `Not stored. Database ${overview.database_detail}`}
           </p>
         </header>
-        <Section name={section} overview={overview} />
+        <RegistryState overview={overview} />
+        <Section name={section} overview={overview} rule={rule} onOpen={openCandidate} />
         <p>
           <button type="button" onClick={onRun}>
             Run pipeline
@@ -115,7 +126,33 @@ export function FoundryScreen({
   );
 }
 
-function Section({ name, overview }: { name: SectionName; overview: FoundryOverview }) {
+function RegistryState({ overview }: { overview: FoundryOverview }) {
+  if (overview.registry === "unavailable") {
+    return <p className="notice">Database unavailable. The registry was not read.</p>;
+  }
+  if (overview.registry === "empty") {
+    return <p>No sources ingested yet.</p>;
+  }
+  if (overview.run?.status === "partial") {
+    return <p className="notice">Partial run. One source failed and was left uningested.</p>;
+  }
+  return null;
+}
+
+function Section({
+  name,
+  overview,
+  rule,
+  onOpen,
+}: {
+  name: SectionName;
+  overview: FoundryOverview;
+  rule: RuleDetail | null;
+  onOpen: (versionId: string) => void;
+}) {
+  if (overview.registry === "unavailable" || overview.registry === "empty") {
+    return null;
+  }
   if (name === "Sources") {
     return (
       <table>
@@ -125,6 +162,7 @@ function Section({ name, overview }: { name: SectionName; overview: FoundryOverv
             <th>Tier</th>
             <th>Type</th>
             <th>Version</th>
+            <th>Status</th>
           </tr>
         </thead>
         <tbody>
@@ -134,6 +172,7 @@ function Section({ name, overview }: { name: SectionName; overview: FoundryOverv
               <td>{source.authority_tier}</td>
               <td>{source.source_type}</td>
               <td>{source.version_label}</td>
+              <td>{source.last_status ?? "unknown"}</td>
             </tr>
           ))}
         </tbody>
@@ -141,6 +180,9 @@ function Section({ name, overview }: { name: SectionName; overview: FoundryOverv
     );
   }
   if (name === "Runs") {
+    if (!overview.run) {
+      return <p>No pipeline run is stored.</p>;
+    }
     return (
       <p>
         Status {overview.run.status}. Fetched {overview.run.fetched_count}. Created{" "}
@@ -197,44 +239,73 @@ function Section({ name, overview }: { name: SectionName; overview: FoundryOverv
       </table>
     );
   }
-  if (name === "Candidates" || name === "Rule") {
+  if (name === "Candidates") {
+    if (overview.candidates.length === 0) {
+      return <p>No candidates have been compiled.</p>;
+    }
+    return (
+      <ul>
+        {overview.candidates.map((candidate) => (
+          <li key={candidate.version_id}>
+            <button type="button" onClick={() => onOpen(candidate.version_id)}>
+              {candidate.rule_id}
+            </button>
+            <span> {candidate.lifecycle}</span>
+            <span> {candidate.channel}</span>
+          </li>
+        ))}
+      </ul>
+    );
+  }
+  if (name === "Rule") {
+    if (!rule) {
+      return <p>Select a candidate.</p>;
+    }
     return (
       <section>
-        <h2>{overview.candidate?.rule_id ?? "No candidate"}</h2>
-        <p>Lifecycle {overview.candidate?.lifecycle ?? "none"}.</p>
-        <p className="muted">{overview.candidate?.semantic_hash}</p>
+        <h2>{rule.rule_id}</h2>
+        <p>Lifecycle {rule.lifecycle}.</p>
+        <p className="muted">{rule.semantic_hash}</p>
         <ul>
-          {overview.validations.map((item) => (
+          {rule.validations.map((item) => (
             <li key={item.validator_name}>
               {item.validator_name}: {item.result}
             </li>
           ))}
         </ul>
         <p>
-          AI {overview.ai_verification.provider}/{overview.ai_verification.model}:{" "}
-          {overview.ai_verification.verdict}
+          AI {rule.ai_verification?.provider ?? "none"}/{rule.ai_verification?.model ?? "none"}:{" "}
+          {rule.ai_verification?.verdict ?? "absent"}
         </p>
-        <p>Channel {overview.publication?.channel ?? "unpublished"}.</p>
+        <p>Channel {rule.publication?.channel ?? "unpublished"}.</p>
+        <ul>
+          {rule.scenarios.map((scenario) => (
+            <li key={scenario.scenario_id}>
+              {scenario.scenario_id}: {scenario.expect} {scenario.result}
+            </li>
+          ))}
+        </ul>
       </section>
     );
   }
   if (name === "Evaluation") {
-    return (
-      <p>
-        Corpus {overview.evaluation.corpus_version}. Precision {overview.evaluation.candidate_precision}.
-        Recall {overview.evaluation.candidate_recall}. False-positive rate{" "}
-        {overview.evaluation.false_positive_rate}. AI ablation {overview.evaluation.ai_ablation}.
-      </p>
-    );
+    return <p>Corpus results are on the rule detail. This slice measures one credential family.</p>;
   }
   return (
     <section>
       <h2>Overview</h2>
       <p>
-        {overview.sources.length} sources. {overview.primitives.length} primitives. Candidate{" "}
-        {overview.candidate?.rule_id ?? "none"}. Publication {overview.publication?.channel ?? "none"}.
+        {overview.sources.length} sources. {overview.primitives.length} primitives. Candidates{" "}
+        {overview.candidates.length}.
       </p>
       <p>{overview.primitives.map((item) => item.primitive_key).join(", ")}</p>
+      {overview.candidates.map((candidate) => (
+        <p key={candidate.version_id}>
+          <button type="button" onClick={() => onOpen(candidate.version_id)}>
+            {candidate.rule_id}
+          </button>
+        </p>
+      ))}
     </section>
   );
 }
