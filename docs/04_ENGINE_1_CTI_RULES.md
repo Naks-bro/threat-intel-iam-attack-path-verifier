@@ -51,7 +51,8 @@ Use one ATT&CK/AWS technique with an independently known IAM escalation pattern.
 - The excerpt is evidence. A code allowlist maps that technique id to the two-hop `CAN_ASSUME` pattern already used by the fixture slice, including `role_trusts_service` for `lambda.amazonaws.com`.
 - `POST /v1/rules/intake` returns a `proposed` rule with approval `pending`. It accepts an artifact id, not a URL.
 - `GET /reviews/rules/attack-t1548-assume-chain` shows the pin, the excerpt, and why the allowlist proposed the rule. Opening the page does not approve it.
-- `POST /v1/rules/approval` records one human decision. An `approved` decision exports the rule for the synthetic benchmark. A rejected decision exports nothing.
+- `POST /v1/rules/approval` records one human decision. An `approved` decision exports the rule for the synthetic benchmark. A rejected decision exports nothing. That decision is not stored in PostgreSQL yet.
+- `GET /v1/workbench/fixtures/attack-t1548-assume-chain` repeats the same pin as a pending candidate without writing. `POST /v1/workbench/imports/attack-t1548-assume-chain` writes it only when PostgreSQL is reachable.
 - Engine 3 matches that exported rule on the positive fixture and returns `supported_by_fixture`. Simulator status stays `not_run`.
 - An unmapped technique, a hash mismatch, markup, or a non-allowlisted reference fails closed.
 - `src/fyp_iam/engine1/artifacts/cloud-techniques-50.json` is a separate dataset of 50 Enterprise ATT&CK 19.2 techniques that list the IaaS platform. Names and ids are stored. Descriptions are not. `GET /v1/datasets/cloud-techniques` reads that file and does not download ATT&CK. Every row is `no_rule_yet` until an allowlisted mapping exists. The review page at `GET /reviews/datasets/cloud-techniques` lists the same rows and does not send them to path search.

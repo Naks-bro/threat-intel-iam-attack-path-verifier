@@ -81,6 +81,17 @@ py -3.12 -m venv .venv
 
 The checked-in fixtures are the six cases `positive`, `hard_negative`, `explicit_deny`, `condition_dependent`, `cyclic`, and `missing_context`. Regenerate them with `scripts/write_synthetic_fixtures.py` after changing `src/fyp_iam/fixtures/cases.py`. A contract test fails if the JSON drifts from the builders.
 
+## Workbench persistence
+
+PostgreSQL is the workbench store. This checkout does not start it locally.
+
+- Set `FYP_DATABASE_URL` to a `postgresql+psycopg://` URL, then run `python -m alembic upgrade head`.
+- `compose.yaml` is for a machine with Docker. It reads `FYP_POSTGRES_PASSWORD` from the environment and does not contain a password.
+- With no database, `GET /health` reports `database=unavailable`. `POST /v1/workbench/imports/{pin_id}` returns 503 `database_unavailable` and writes nothing.
+- `GET /v1/workbench/fixtures/attack-t1548-assume-chain` is a read-only preview. `persisted` is false.
+- The React screen is `frontend/`. From that directory, `npm install` and `npm run dev` proxy the API on port 8765.
+- GitHub Actions job `postgres` migrates a service container and runs the tests marked `postgres`. Local `pytest` skips that mark when `FYP_DATABASE_URL` is unset.
+
 ## Safety
 
 - No credentials, account IDs, raw ARNs, or raw policy documents belong in Git or fixtures.

@@ -2,7 +2,7 @@
 
 ## Status
 
-Proposed. This records an audit of the local prototype and the architecture for the next Engine 1 slice. It does not implement PostgreSQL, a React workbench, source adapters, or an AI checker.
+Proposed. This records the audit and the first vertical slice. The checkout contains the PostgreSQL mapping, Alembic migration, and first React pending-review screen. A local PostgreSQL server has not been run. Source adapters and an AI checker are not in this slice.
 
 ## Date
 
@@ -35,23 +35,30 @@ Misleading if read as the workbench:
 - Almost every technique row is `no_rule_yet`. One hardcoded mapping exists: `mitre-attack` / `T1548` to `rule_t1548_assume_chain`. T1548 is not one of the 50 catalog rows.
 - No model checker runs. `checker` on the catalog is `not_used`.
 
-Blocked for the persistence phase:
+Local execution limit:
 
-- This machine has neither `psql` nor `docker`. A PostgreSQL runtime cannot be started here until one of those is available. Tests must not pretend a database ran.
+- This machine has neither `psql` nor `docker`. The migration and the PostgreSQL tests are in the checkout. They run in GitHub Actions. Local commands must not pretend a database ran.
 
 ## Decision
 
 - Keep the prototype modules working. New workbench code sits beside them until a stored path can replace a behavior with tests.
 - The workbench is a pipeline portal: ingest, preserve, normalize, correlate, candidate, validate, review, publish. Login roles are deferred.
-- PostgreSQL, SQLAlchemy 2, and Alembic are the intended runtime store. Domain logic stays independent of FastAPI and of ORM classes.
-- Source families stay distinct. Relations are typed. A later confidence record separates source count from authority, relevance, mapping confidence, freshness, corroboration, and an overall result computed from those parts.
+- PostgreSQL, SQLAlchemy 2, and Alembic are the workbench store. Domain records and the repository protocol do not import a driver. The API uses PostgreSQL only when `FYP_DATABASE_URL` is a reachable PostgreSQL URL. SQLite is rejected. There is no production fallback that pretends a write succeeded.
+- Locally, `psql` and Docker are unavailable. That limits local execution. It does not remove the migration, the repository, or the GitHub Actions PostgreSQL job.
+- A read-only fixture endpoint shows the T1548 path without writing. The import endpoint returns `database_unavailable` when PostgreSQL cannot be reached.
+- Source families stay distinct. Relations are typed. The current catalog `strength` field remains a source count until a later confidence model replaces it.
 - Rule candidates stay deterministic and allowlisted. Unsupported evidence stays unsupported. Nothing auto-approves.
 - An AI checker, if added, is optional, schema-validated, and unable to approve or silently edit a rule. The deterministic path must run with the checker disabled.
-- A published rule must point at the exact candidate version and evidence snapshot that was approved. That publication is not implemented yet.
-- No production password, token, or NVD API key is stored in the repository. An optional NVD key, when a later adapter needs one, comes from the environment.
+- A published rule must point at the exact candidate version and evidence snapshot that was approved. The publication table exists. This slice does not write a publication.
+- No production password, token, or NVD API key is stored in the repository. `compose.yaml` requires `FYP_POSTGRES_PASSWORD` from the environment. The CI workflow uses an ephemeral `ci-only` password for its service container.
+
+## Implementation status
+
+- Implemented in the checkout: SQLAlchemy models, Alembic migration, repository protocol, in-memory unit-test store, PostgreSQL store, health detail, fixture preview, import endpoint, and the first React pending-review screen.
+- Not locally verified: applying the migration or reading back a committed row. This machine cannot run PostgreSQL.
+- CI-verified PostgreSQL behavior: recorded only after the `postgres` job on `engine1-curation-workbench` is green. Until that job is observed, do not describe the database as verified.
 
 ## Consequences
 
-- Phase 0 is this audit and checkpoint. The workbench screens, database, adapters, and checker remain unimplemented.
-- Phase 1 starts when a PostgreSQL server can be reached from this checkout. Until then, persistence work is blocked rather than simulated.
+- Phase 0 remains the audit. The first vertical slice adds the store and the pending T1548 screen without claiming a local database.
 - Engine 2–4 contracts stay as they are unless a published-rule export forces a compatible change.
