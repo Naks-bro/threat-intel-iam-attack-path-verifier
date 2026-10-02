@@ -7,6 +7,7 @@ __pycache__/
 .ruff_cache/
 *.egg-info/
 dist/
+node_modules/
 build/
 .env
 .coverage
