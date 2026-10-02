@@ -1,6 +1,6 @@
 # Project Status and Truth Model
 
-Last curated: 2026-10-02
+Last curated: 2026-10-03
 
 ## Why this file exists
 
@@ -24,15 +24,25 @@ The statements in this section describe this implementation repository after the
 - Engine 1 can load one pinned local technique file, reject a hash mismatch or unsafe text, propose a pending rule from a code allowlist, show that proposal on a review page, and export an `ApprovedRule` only after a separate human approval request. It also loads a pinned 50-row Enterprise ATT&CK 19.2 IaaS dataset and joins pinned OWASP short names, one keyless NVD page, and CISA KEV catalog metadata into source nodes. Strength counts distinct source families. The automated join stores a compact catalog whose rows are stated as technique, weakness, vulnerability, or catalog. A model checker has not run. Those rows stay `no_rule_yet`. `POST /v1/rules/intake` does not approve and does not fetch a URL. Request handling does not download the feeds. The reported HTML parser remains **Reported/unverified**.
 - Engine 2 can normalize synthetic IAM records into an `IAMGraphSnapshot`, record an unevaluated permissions boundary, emit an exact `service:*.amazonaws.com` trust, reconcile node and edge counts, match the local verdict of the hand-built fixtures, and report capability-edge precision and recall. A twelve-action read-only IAM template is tested and not attached. Live AWS collection is disabled and makes no API call. Neo4j is not implemented.
 - The reported Engine 1 parser from the chats remains **Reported/unverified**. It was not present in the curated folder and was not imported.
-- ADRs 001–007 are **Proposed**. ADR-004 records the local-slice behavior that the tests exercise. ADR-005 records the one-technique local intake. ADR-006 records the 50-row ATT&CK cloud dataset. ADR-007 records source-family strength, including the pinned NVD page and CISA KEV catalog.
+- ADRs 001–008 are **Proposed**. ADR-004 records the local-slice behavior that the tests exercise. ADR-005 records the one-technique local intake. ADR-006 records the 50-row ATT&CK cloud dataset. ADR-007 records source-family strength, including the pinned NVD page and CISA KEV catalog. ADR-008 records the 2026-10-03 Engine 1 audit and the proposed curation workbench. The workbench database, adapters, and screens are not implemented.
 - Confirm the slice with `python -m pytest`, `python -m ruff check .`, and `python -m mypy src` from a Python 3.12 virtual environment.
 
-**Verified** on 2026-10-02 with Python 3.12.10 in this checkout:
+**Verified** on 2026-10-03 with Python 3.12.10 in this checkout, on the prototype checkpoint before ADR-008:
 
 - `python -m ruff check .` — all checks passed
 - `python -m ruff format --check .` — 79 files already formatted
 - `python -m pytest` — 115 passed, with one Starlette deprecation warning about the `httpx` test client
 - `python -m mypy src` — no issues found in 37 source files
+
+## Engine 1 audit
+
+**Verified** for the local prototype. **Proposed** for the workbench in ADR-008. Not a claim that the workbench exists.
+
+- Reuse the pinned artifacts, the T1548 allowlist, fail-closed intake, and the in-memory approval export.
+- `strength` in the current catalog is a distinct-source count. It is not an overall confidence score.
+- Approval is not durable. The reviewer id is caller-supplied. The review pages are server-rendered HTML.
+- AWS Threat Technique Catalog ingestion, scheduled source runs, PostgreSQL, the React workbench, and an AI checker are not in this checkout.
+- On 2026-10-03 this machine had no `psql` and no `docker`, so a live PostgreSQL phase cannot be claimed from here.
 
 ## Accepted project baseline
 
