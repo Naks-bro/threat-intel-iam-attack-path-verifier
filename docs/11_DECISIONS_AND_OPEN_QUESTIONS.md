@@ -12,6 +12,7 @@
 | D-006 | Policy Simulator is a pre-check with explicit limitations | Proposed | Pending implementation test |
 | D-007 | CloudGoat verification is scenario-mapped and opt-in | Proposed | Pending guide/account-owner approval |
 | D-008 | GNN and Redis are deferred until justified | Proposed | Pending vertical-slice measurements |
+| D-009 | First executable slice is local fixtures, bounded BFS, and fixture verdicts | Proposed | `decisions/ADR-004-local-fixture-vertical-slice.md` |
 
 ## Highest-priority open questions
 

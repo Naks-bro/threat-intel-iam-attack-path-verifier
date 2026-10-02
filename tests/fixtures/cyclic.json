@@ -1,0 +1,154 @@
+{
+  "case_id": "cyclic",
+  "description": "A cycle between a and b exists, and one simple path reaches c.",
+  "rules": [
+    {
+      "schema_version": "0.1",
+      "rule_id": "rule_cyclic",
+      "rule_version": 1,
+      "title": "Two-hop role assumption to an administrative role",
+      "description": "A principal may reach another role through two derived CAN_ASSUME edges. The description is data and is never executed.",
+      "status": "approved",
+      "severity": "high",
+      "technique_refs": [
+        {
+          "framework": "mitre-attack",
+          "external_id": "T1548",
+          "version": "pinned-at-fixture"
+        }
+      ],
+      "required_capabilities": [
+        {
+          "action": "sts:AssumeRole",
+          "resource_selector": {
+            "kind": "role",
+            "constraint": "derived_edge"
+          }
+        }
+      ],
+      "preconditions": [],
+      "path_pattern": [
+        {
+          "from": "principal",
+          "relationship": "CAN_ASSUME",
+          "to": "mid"
+        },
+        {
+          "from": "mid",
+          "relationship": "CAN_ASSUME",
+          "to": "admin_role"
+        }
+      ],
+      "evidence_refs": [
+        "evidence_rule_cyclic"
+      ],
+      "limitations": [
+        "This rule matches derived graph edges only. It does not evaluate IAM policy JSON."
+      ],
+      "approval": {
+        "decision": "approved",
+        "reviewer_id": "reviewer_alias",
+        "decided_at": "2026-10-02T12:00:00Z",
+        "comment": "Approved for the synthetic benchmark only."
+      },
+      "created_by": {
+        "kind": "human",
+        "model_or_method": "hand-authored-fixture"
+      },
+      "created_at": "2026-10-02T12:00:00Z"
+    }
+  ],
+  "snapshot": {
+    "schema_version": "0.1",
+    "snapshot_id": "snapshot_cyclic",
+    "scope": {
+      "provider": "aws",
+      "account_alias": "synthetic-lab",
+      "regions": [
+        "global"
+      ],
+      "collected_at": "2026-10-02T12:00:00Z"
+    },
+    "nodes": [
+      {
+        "node_id": "principal:a",
+        "node_type": "principal",
+        "subtype": "iam_role",
+        "display_name": "a",
+        "arn_hash": "sha256:53852f1d52191e97ac8b8d2dee8339c028e12804b0a2d1a69ddd3c6e3b69f261",
+        "properties": {}
+      },
+      {
+        "node_id": "principal:b",
+        "node_type": "principal",
+        "subtype": "iam_role",
+        "display_name": "b",
+        "arn_hash": "sha256:01161b25e02ff8e202267685e807f8c0c3712db668c711be36c57045f2bfa5a6",
+        "properties": {}
+      },
+      {
+        "node_id": "principal:c",
+        "node_type": "principal",
+        "subtype": "iam_role",
+        "display_name": "c",
+        "arn_hash": "sha256:b00f5dec57ed762b9eb5442632cee88e757cc309d3b704a709081d7f493e455d",
+        "properties": {}
+      }
+    ],
+    "edges": [
+      {
+        "edge_id": "edge_a_b",
+        "edge_type": "CAN_ASSUME",
+        "source_id": "principal:a",
+        "target_id": "principal:b",
+        "derivation": "policy_analysis",
+        "policy_refs": [
+          "policy_a_b"
+        ],
+        "condition_summary": {},
+        "confidence": "deterministic",
+        "effect": "allow"
+      },
+      {
+        "edge_id": "edge_b_a",
+        "edge_type": "CAN_ASSUME",
+        "source_id": "principal:b",
+        "target_id": "principal:a",
+        "derivation": "policy_analysis",
+        "policy_refs": [
+          "policy_b_a"
+        ],
+        "condition_summary": {},
+        "confidence": "deterministic",
+        "effect": "allow"
+      },
+      {
+        "edge_id": "edge_b_c",
+        "edge_type": "CAN_ASSUME",
+        "source_id": "principal:b",
+        "target_id": "principal:c",
+        "derivation": "policy_analysis",
+        "policy_refs": [
+          "policy_b_c"
+        ],
+        "condition_summary": {},
+        "confidence": "deterministic",
+        "effect": "allow"
+      }
+    ],
+    "policy_documents": [],
+    "collection": {
+      "collector_version": "local-fixture-0.1",
+      "permissions_profile": "none-synthetic-fixture",
+      "complete": true,
+      "warnings": []
+    },
+    "validation": {
+      "status": "valid",
+      "errors": [],
+      "warnings": []
+    }
+  },
+  "condition_resolutions": {},
+  "evaluated_at": "2026-10-02T12:00:00Z"
+}

@@ -1,5 +1,7 @@
 # Instructions for AI Agents and Collaborators
 
+This checkout is the implementation repository. Raw ChatGPT exports are outside it and are not authoritative. Do not treat a component as implemented unless its source and tests are in this tree. The local fixture slice is described in `docs/decisions/ADR-004-local-fixture-vertical-slice.md` and `docs/00_STATUS_AND_TRUTH_MODEL.md`.
+
 ## Read order
 
 Before proposing or changing implementation, read:

@@ -1,0 +1,141 @@
+{
+  "case_id": "hard_negative",
+  "description": "Same principals, but only CAN_ACCESS edges, so the assume-chain rule does not match.",
+  "rules": [
+    {
+      "schema_version": "0.1",
+      "rule_id": "rule_hard_negative",
+      "rule_version": 1,
+      "title": "Two-hop role assumption to an administrative role",
+      "description": "A principal may reach another role through two derived CAN_ASSUME edges. The description is data and is never executed.",
+      "status": "approved",
+      "severity": "high",
+      "technique_refs": [
+        {
+          "framework": "mitre-attack",
+          "external_id": "T1548",
+          "version": "pinned-at-fixture"
+        }
+      ],
+      "required_capabilities": [
+        {
+          "action": "sts:AssumeRole",
+          "resource_selector": {
+            "kind": "role",
+            "constraint": "derived_edge"
+          }
+        }
+      ],
+      "preconditions": [],
+      "path_pattern": [
+        {
+          "from": "principal",
+          "relationship": "CAN_ASSUME",
+          "to": "mid"
+        },
+        {
+          "from": "mid",
+          "relationship": "CAN_ASSUME",
+          "to": "admin_role"
+        }
+      ],
+      "evidence_refs": [
+        "evidence_rule_hard_negative"
+      ],
+      "limitations": [
+        "This rule matches derived graph edges only. It does not evaluate IAM policy JSON."
+      ],
+      "approval": {
+        "decision": "approved",
+        "reviewer_id": "reviewer_alias",
+        "decided_at": "2026-10-02T12:00:00Z",
+        "comment": "Approved for the synthetic benchmark only."
+      },
+      "created_by": {
+        "kind": "human",
+        "model_or_method": "hand-authored-fixture"
+      },
+      "created_at": "2026-10-02T12:00:00Z"
+    }
+  ],
+  "snapshot": {
+    "schema_version": "0.1",
+    "snapshot_id": "snapshot_hard_negative",
+    "scope": {
+      "provider": "aws",
+      "account_alias": "synthetic-lab",
+      "regions": [
+        "global"
+      ],
+      "collected_at": "2026-10-02T12:00:00Z"
+    },
+    "nodes": [
+      {
+        "node_id": "principal:user/alice",
+        "node_type": "principal",
+        "subtype": "iam_user",
+        "display_name": "alice",
+        "arn_hash": "sha256:e1d6f30aa8cc1b5e3732e16b52a49e086db504635cb18a1635be042ea09b80b4",
+        "properties": {}
+      },
+      {
+        "node_id": "principal:role/dev",
+        "node_type": "principal",
+        "subtype": "iam_role",
+        "display_name": "dev",
+        "arn_hash": "sha256:ee154c15ba9713245e465c515b5b37e9e39496f10112780e84504734f1851f4a",
+        "properties": {}
+      },
+      {
+        "node_id": "principal:role/admin",
+        "node_type": "principal",
+        "subtype": "iam_role",
+        "display_name": "admin",
+        "arn_hash": "sha256:d4cf5400e28a7afb4f28cf95ef9dc87bee568dffe5a735de58e56f32fefbfce8",
+        "properties": {}
+      }
+    ],
+    "edges": [
+      {
+        "edge_id": "edge_alice_access_dev",
+        "edge_type": "CAN_ACCESS",
+        "source_id": "principal:user/alice",
+        "target_id": "principal:role/dev",
+        "derivation": "policy_analysis",
+        "policy_refs": [
+          "policy_access_dev"
+        ],
+        "condition_summary": {},
+        "confidence": "deterministic",
+        "effect": "allow"
+      },
+      {
+        "edge_id": "edge_dev_access_admin",
+        "edge_type": "CAN_ACCESS",
+        "source_id": "principal:role/dev",
+        "target_id": "principal:role/admin",
+        "derivation": "policy_analysis",
+        "policy_refs": [
+          "policy_access_admin"
+        ],
+        "condition_summary": {},
+        "confidence": "deterministic",
+        "effect": "allow"
+      }
+    ],
+    "policy_documents": [],
+    "collection": {
+      "collector_version": "local-fixture-0.1",
+      "permissions_profile": "none-synthetic-fixture",
+      "complete": true,
+      "warnings": []
+    },
+    "validation": {
+      "status": "valid",
+      "errors": [],
+      "warnings": []
+    }
+  },
+  "condition_resolutions": {},
+  "evaluated_at": "2026-10-02T12:00:00Z"
+}

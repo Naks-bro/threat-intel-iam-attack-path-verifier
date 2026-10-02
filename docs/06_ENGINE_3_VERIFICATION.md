@@ -69,3 +69,20 @@ A sandbox result verifies only the mapped scenario under its recorded configurat
 - Sandbox execution is disabled by default and impossible without explicit environment configuration.
 - Cleanup status is visible and failed cleanup is treated as a high-priority operational incident.
 
+## Local fixture adapter (implemented)
+
+The code in `src/fyp_iam/engine3/` is the first adapter. It is not the Policy Simulator and it cannot run a sandbox.
+
+Search is bounded breadth-first search. Explicit-deny edges are traversable; the verdict is applied afterwards. A repeated node or edge ends that walk. Limits and ordering are recorded in ADR-004.
+
+Local precedence:
+
+```text
+operational error                 -> error
+missing or unsupported context    -> inconclusive
+explicit deny or unsatisfied      -> denied_by_fixture
+otherwise                         -> supported_by_fixture
+```
+
+`required_capabilities` are not evaluated. Unknown precondition types are reported and skipped. Sandbox execution has no code path in this adapter.
+

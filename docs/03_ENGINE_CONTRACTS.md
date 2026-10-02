@@ -201,3 +201,17 @@ Engine 4 combines immutable references rather than rewriting evidence:
 }
 ```
 
+## Local-slice extensions (Proposed)
+
+ADR-004 implements the models above with these additions. They remain Proposed:
+
+- `GraphEdge.effect`: `allow` (default) or `deny`.
+- `DiscoveryLimits.max_paths` and `DiscoveryLimits.max_expansions`.
+- `AttackHop.effect` and `AttackHop.condition_keys`. `required_action` is the graph edge type, not an AWS API call.
+- `VerificationResult.local_fixture` records fixture context gaps. `policy_simulation.status` is `not_run` for this adapter. `sandbox.status` is `not_mapped`.
+- Local statuses `supported_by_fixture` and `denied_by_fixture` sit beside the simulator and sandbox statuses. The local adapter does not emit the simulator or sandbox statuses.
+- `Finding.explanation` includes `simulator: not_run` and `sandbox: not_mapped`.
+- `priority_model.features` is a typed baseline feature object. `baseline-v1` score is `severity_weight * status_weight`.
+- Policy documents, when present, are redacted hash references. Raw policy JSON is rejected.
+- Condition-key values are not interpreted. Callers pass an explicit per-edge resolution or the result stays inconclusive.
+

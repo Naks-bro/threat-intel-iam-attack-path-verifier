@@ -49,8 +49,8 @@ The tentative shared stack is:
 
 | Concern | Baseline | Status |
 |---|---|---|
-| Language | Python | Accepted direction; version not frozen |
-| API and validation | FastAPI + Pydantic | Proposed |
+| Language | Python 3.12 | Used by this checkout; pin recorded in ADR-004, still Proposed for team acceptance |
+| API and validation | FastAPI + Pydantic v2 | Implemented for the local fixture slice; broader platform use remains Proposed |
 | Relational records/audit | PostgreSQL | Proposed |
 | IAM graph | Neo4j | Accepted direction, implementation unverified |
 | Graph analytics | Neo4j GDS | Optional; use only for defined experiments |

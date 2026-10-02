@@ -18,9 +18,20 @@ The source material is a set of AI conversation exports. It mixes user decisions
 
 ## Current verified inventory
 
-- Nine Markdown conversation exports are present.
-- No source-code files, tests, lockfiles, manifests, Docker files, database migrations, schemas, CI configuration, or generated project documentation were present before this curation pass.
-- Therefore, there is no build or test command that can be run from this folder today.
+The statements in this section describe this implementation repository after the local slice was added. The original curation folder still holds the raw conversation exports and the pre-implementation baseline. Those exports are not in this Git tree.
+
+- Python package `fyp_iam` implements the local fixture pipeline: contract models, six synthetic cases, bounded path discovery, fixture verification, baseline findings, and a FastAPI boundary.
+- Engines 1 and 2 are package boundaries only. No CTI parser, AWS collector, Neo4j schema, Redis worker, or LLM client is in this tree.
+- The reported Engine 1 parser from the chats remains **Reported/unverified**. It was not present in the curated folder and was not imported.
+- ADRs 001–004 are **Proposed**. ADR-004 records the local-slice behavior that the tests exercise.
+- Confirm the slice with `python -m pytest`, `python -m ruff check .`, and `python -m mypy src` from a Python 3.12 virtual environment.
+
+**Verified** on 2026-10-02 with Python 3.12.10 in this checkout:
+
+- `python -m ruff check .` — all checks passed
+- `python -m ruff format --check .` — 49 files already formatted
+- `python -m pytest` — 39 passed, with one Starlette deprecation warning about the `httpx` test client
+- `python -m mypy src` — no issues found in 22 source files
 
 ## Accepted project baseline
 
@@ -50,12 +61,9 @@ None of those implementation files or test outputs exist in this folder. Treat t
 7. **A GNN is optional.** It should be included only if a labeled dataset, baseline, evaluation plan, and measurable gain exist.
 8. **“No prior work combines these ideas” remains unverified.** Absence claims require a documented systematic search, not a handful of examples.
 
-## What must happen before coding resumes
+## Local slice still open
 
-- Locate or create the actual repository.
-- Confirm whether the reported parser prototype exists and import it without overwriting user work.
-- Record runtime versions and dependency manifests.
-- Freeze the first vertical-slice scope and accept `ApprovedRule v0.1` and `IAMGraphSnapshot v0.1`.
-- Select one supported AWS escalation pattern and one lab fixture/scenario.
-- Establish build, test, lint, type-check, schema-validation, and local infrastructure commands.
+- Team acceptance of Proposed v0.1 and of ADR-004.
+- The reported Engine 1 parser, if it exists outside this folder.
+- Live read-only collection, Policy Simulator, and any mapped sandbox. None of those are part of the local slice.
 
