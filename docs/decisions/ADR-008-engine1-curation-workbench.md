@@ -2,7 +2,7 @@
 
 ## Status
 
-Proposed. This records the audit and the first vertical slice. The checkout contains the PostgreSQL mapping, Alembic migration, and first React pending-review screen. A local PostgreSQL server has not been run. Source adapters and an AI checker are not in this slice.
+Superseded for product direction by ADR-009. The checkpoint it describes remains in git. It is not the foundry.
 
 ## Date
 

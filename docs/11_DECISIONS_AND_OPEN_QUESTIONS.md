@@ -13,7 +13,8 @@
 | D-007 | CloudGoat verification is scenario-mapped and opt-in | Proposed | Pending guide/account-owner approval |
 | D-008 | GNN and Redis are deferred until justified | Proposed | Pending vertical-slice measurements |
 | D-010 | A source node may be one family or a combination. Strength counts distinct families. NVD and CISA KEV are pinned free feeds. AWS TTC waits. | Proposed | `decisions/ADR-007-source-strength.md` |
-| D-011 | Engine 1 becomes a pipeline-portal curation workbench. Current strength is only a source count. PostgreSQL is the store. Local execution is limited because this machine has no database server. CI verifies migrations. | Proposed | `decisions/ADR-008-engine1-curation-workbench.md` |
+| D-011 | Engine 1 checkpoint is a pipeline portal with PostgreSQL. Product direction is superseded by the foundry. | Proposed | `decisions/ADR-008-engine1-curation-workbench.md` |
+| D-012 | Engine 1 is an automated threat-to-rule foundry. The portal is a control plane. AI verifies and does not author rules. AWS TTC HTML is not an adapter. T1548 is not a precise IAM mapping. | Proposed | `decisions/ADR-009-threat-to-rule-foundry.md` |
 
 ## Highest-priority open questions
 
