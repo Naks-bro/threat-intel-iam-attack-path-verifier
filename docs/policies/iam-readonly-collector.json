@@ -1,0 +1,25 @@
+{
+  "comment": "Template only. It is not attached to an account and contains no account ID. Do not add write actions. The Action list must match READ_ONLY_ACTIONS.",
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Sid": "ReadIamConfiguration",
+      "Effect": "Allow",
+      "Action": [
+        "iam:GetPolicy",
+        "iam:GetPolicyVersion",
+        "iam:GetRole",
+        "iam:GetRolePolicy",
+        "iam:GetUser",
+        "iam:GetUserPolicy",
+        "iam:ListAttachedRolePolicies",
+        "iam:ListAttachedUserPolicies",
+        "iam:ListRolePolicies",
+        "iam:ListRoles",
+        "iam:ListUserPolicies",
+        "iam:ListUsers"
+      ],
+      "Resource": "*"
+    }
+  ]
+}

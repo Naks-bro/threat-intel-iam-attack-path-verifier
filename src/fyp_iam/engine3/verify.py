@@ -1,5 +1,6 @@
 """Local fixture verification. This module does not call AWS."""
 
+from collections.abc import Mapping
 from datetime import datetime
 
 from fyp_iam.contracts.models import (
@@ -20,7 +21,7 @@ from fyp_iam.contracts.models import (
     VerificationStatus,
 )
 from fyp_iam.core.ids import sha256_key, stable_id
-from fyp_iam.engine3.discovery import Walk
+from fyp_iam.engine3.discovery import Walk, service_trust_edges
 
 LOCAL_LIMITATION = (
     "Local fixture verification does not call AWS IAM Policy Simulator and is not "
@@ -87,6 +88,7 @@ def verify_path(
     path: AttackPath,
     condition_resolutions: dict[str, ConditionResolution],
     evaluated_at: datetime,
+    binding: Mapping[str, str] | None = None,
 ) -> VerificationResult:
     edges = {edge.edge_id: edge for edge in snapshot.edges}
     missing: list[str] = []
@@ -104,6 +106,12 @@ def verify_path(
         if edge is None:
             operational_error = True
             notes.append(f"missing edge {hop.edge_id}")
+            continue
+        _classify_edge(edge, condition_resolutions, missing, unsupported, denied, notes)
+
+    hop_ids = {hop.edge_id for hop in path.hops}
+    for edge in _bound_service_trusts(snapshot, rule, binding):
+        if edge.edge_id in hop_ids:
             continue
         _classify_edge(edge, condition_resolutions, missing, unsupported, denied, notes)
 
@@ -141,6 +149,25 @@ def verify_path(
         started_at=evaluated_at,
         finished_at=evaluated_at,
     )
+
+
+def _bound_service_trusts(
+    snapshot: IAMGraphSnapshot,
+    rule: ApprovedRule,
+    binding: Mapping[str, str] | None,
+) -> list[GraphEdge]:
+    if not binding:
+        return []
+    nodes_by_id = {node.node_id: node for node in snapshot.nodes}
+    edges: list[GraphEdge] = []
+    for item in rule.preconditions:
+        if item.type != "role_trusts_service":
+            continue
+        subject = binding.get(item.subject)
+        if subject is None:
+            continue
+        edges.extend(service_trust_edges(snapshot, nodes_by_id, subject, item.value))
+    return edges
 
 
 def _classify_edge(

@@ -25,6 +25,9 @@ dev = [
 [tool.setuptools.packages.find]
 where = ["src"]
 
+[tool.setuptools.package-data]
+fyp_iam = ["engine1/artifacts/*.json"]
+
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 addopts = ["-q"]

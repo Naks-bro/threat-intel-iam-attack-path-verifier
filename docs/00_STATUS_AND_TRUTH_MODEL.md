@@ -20,18 +20,19 @@ The source material is a set of AI conversation exports. It mixes user decisions
 
 The statements in this section describe this implementation repository after the local slice was added. The original curation folder still holds the raw conversation exports and the pre-implementation baseline. Those exports are not in this Git tree.
 
-- Python package `fyp_iam` implements the local fixture pipeline: contract models, six synthetic cases, bounded path discovery, fixture verification, baseline findings, and a FastAPI boundary.
-- Engines 1 and 2 are package boundaries only. No CTI parser, AWS collector, Neo4j schema, Redis worker, or LLM client is in this tree.
+- Python package `fyp_iam` implements the local fixture pipeline: contract models, six synthetic cases, bounded path discovery, fixture verification, baseline findings that cite hop policy refs and gaps, server-rendered review pages, an RQ3 fixture manifest, and a FastAPI boundary.
+- Engine 1 can load one pinned local technique file, reject a hash mismatch or unsafe text, propose a pending rule from a code allowlist, show that proposal on a review page, and export an `ApprovedRule` only after a separate human approval request. It also loads a pinned 50-row Enterprise ATT&CK 19.2 IaaS dataset and joins pinned OWASP short names, one keyless NVD page, and CISA KEV catalog metadata into source nodes. Strength counts distinct source families. The automated join stores a compact catalog whose rows are stated as technique, weakness, vulnerability, or catalog. A model checker has not run. Those rows stay `no_rule_yet`. `POST /v1/rules/intake` does not approve and does not fetch a URL. Request handling does not download the feeds. The reported HTML parser remains **Reported/unverified**.
+- Engine 2 can normalize synthetic IAM records into an `IAMGraphSnapshot`, record an unevaluated permissions boundary, emit an exact `service:*.amazonaws.com` trust, reconcile node and edge counts, match the local verdict of the hand-built fixtures, and report capability-edge precision and recall. A twelve-action read-only IAM template is tested and not attached. Live AWS collection is disabled and makes no API call. Neo4j is not implemented.
 - The reported Engine 1 parser from the chats remains **Reported/unverified**. It was not present in the curated folder and was not imported.
-- ADRs 001–004 are **Proposed**. ADR-004 records the local-slice behavior that the tests exercise.
+- ADRs 001–007 are **Proposed**. ADR-004 records the local-slice behavior that the tests exercise. ADR-005 records the one-technique local intake. ADR-006 records the 50-row ATT&CK cloud dataset. ADR-007 records source-family strength, including the pinned NVD page and CISA KEV catalog.
 - Confirm the slice with `python -m pytest`, `python -m ruff check .`, and `python -m mypy src` from a Python 3.12 virtual environment.
 
 **Verified** on 2026-10-02 with Python 3.12.10 in this checkout:
 
 - `python -m ruff check .` — all checks passed
-- `python -m ruff format --check .` — 49 files already formatted
-- `python -m pytest` — 39 passed, with one Starlette deprecation warning about the `httpx` test client
-- `python -m mypy src` — no issues found in 22 source files
+- `python -m ruff format --check .` — 79 files already formatted
+- `python -m pytest` — 115 passed, with one Starlette deprecation warning about the `httpx` test client
+- `python -m mypy src` — no issues found in 37 source files
 
 ## Accepted project baseline
 

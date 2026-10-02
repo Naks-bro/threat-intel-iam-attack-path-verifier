@@ -1,0 +1,14 @@
+{
+  "artifact_id": "attack-t9999-unmapped",
+  "excerpt": "Local pin for a technique id that has no curated IAM mapping.",
+  "excerpt_location": "excerpt",
+  "external_id": "T9999",
+  "framework": "mitre-attack",
+  "license_note": "Cites a technique identifier only. This file is a project-local pin. Runtime code does not download it.",
+  "official_reference": "https://attack.mitre.org/techniques/T9999/",
+  "retrieved_at": "2026-10-02T12:00:00Z",
+  "schema_version": "0.1",
+  "source_name": "mitre-attack",
+  "source_version": "local-pin-2026-10-02",
+  "technique_name": "Unmapped local pin"
+}

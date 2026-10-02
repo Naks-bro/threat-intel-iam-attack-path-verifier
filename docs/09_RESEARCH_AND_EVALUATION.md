@@ -51,6 +51,8 @@ Report counts and confidence intervals where possible; do not rely on accuracy a
 
 ## Experiment manifest
 
+The local slice writes one RQ3 manifest for the six checked-in fixtures. It records verdict counts and capability-edge precision and recall for the cases the normalizer can represent. `CAN_ACCESS` is reported as not scored. Model, prompt, and random seed are `not_used`. A live-account or sandbox run is not included. A precision of 1 is agreement with the fixture, not exploitability.
+
 Every reported run records:
 
 ```text

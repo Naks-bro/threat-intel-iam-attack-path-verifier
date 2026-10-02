@@ -5,6 +5,7 @@ from dataclasses import dataclass
 
 from fyp_iam.contracts.models import (
     ApprovedRule,
+    AuthorizationEffect,
     DiscoveryLimits,
     EdgeType,
     GraphEdge,
@@ -202,24 +203,28 @@ def _preconditions_ok(
         if item.type != "role_trusts_service":
             return False
         subject = binding.get(item.subject)
-        if subject is None or not _trusts_service(snapshot, nodes_by_id, subject, item.value):
+        if subject is None or not service_trust_edges(snapshot, nodes_by_id, subject, item.value):
             return False
     return True
 
 
-def _trusts_service(
+def service_trust_edges(
     snapshot: IAMGraphSnapshot,
     nodes_by_id: dict[str, GraphNode],
     subject_id: str,
     service_name: str,
-) -> bool:
+) -> list[GraphEdge]:
+    """Allow TRUSTS edges from a role to one service. Deny edges are not trust."""
+    matches: list[GraphEdge] = []
     for edge in snapshot.edges:
         if edge.edge_type != EdgeType.TRUSTS or edge.source_id != subject_id:
+            continue
+        if edge.effect != AuthorizationEffect.allow:
             continue
         target = nodes_by_id[edge.target_id]
         if target.node_type != NodeType.service:
             continue
         principal = target.properties.get("service_principal", target.display_name)
         if principal == service_name:
-            return True
-    return False
+            matches.append(edge)
+    return matches

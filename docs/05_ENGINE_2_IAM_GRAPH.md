@@ -70,6 +70,30 @@ Neo4j is the query/persistence implementation, not the only representation. Cont
 - Live collection succeeds using a documented read-only policy in a lab account.
 - Logs and exported fixtures contain no credentials or unnecessary account identifiers.
 
+## Synthetic normalizer (implemented)
+
+`normalize_synthetic_account` turns fixture identity and trust statements into an `IAMGraphSnapshot`. It does not call AWS.
+
+A `CAN_ASSUME` edge is emitted only when both sides are exact `sts:AssumeRole` statements, the resource is a known role, and the role trust lists that principal. An explicit deny on either side wins. Condition keys are copied as `unevaluated` and are not interpreted. The edge stays `deterministic` confidence so a caller can mark that one edge satisfied, unsatisfied, or unsupported. A permissions boundary still forces `unknown` confidence. Wildcards and every other action are skipped and make `collection.complete` false. A standing warning records that SCPs, RCPs, session policies, and resource policies were not evaluated. That warning alone does not mark the snapshot incomplete.
+
+`HAS_POLICY` edges record that statements were attached. Their `effect` is not an authorization verdict.
+
+A `boundary_id` on an identity becomes one shared policy node and a `HAS_BOUNDARY` edge. That edge is not evaluated. Any `CAN_ASSUME` edge that starts at that identity is marked `unknown` confidence, so a path through it stays `inconclusive`. The boundary does not create an allow.
+
+An exact trust principal `service:<name>.amazonaws.com` becomes one shared service node and a `TRUSTS` edge. That is the relationship the approved assume-chain precondition `role_trusts_service` checks. A deny trust is recorded and does not satisfy the precondition. A condition key on that trust stays `unevaluated`, so the finding stays `inconclusive` until a caller resolves it. Any other service id is skipped and marks collection incomplete. This does not look the service up in AWS.
+
+`capability_pairs` compares `CAN_ASSUME`, `TRUSTS`, `HAS_BOUNDARY`, and `CAN_ACCESS` by type, source, target, and effect. Tests build synthetic records for the positive, explicit-deny, condition, missing-context, and cyclic fixtures and require the same pairs and the same local verdict. The hard-negative fixture uses `CAN_ACCESS`, which this normalizer does not invent; both analyses return no finding. Equal pairs are not exploitability.
+
+`normalize_with_coverage` also returns a layer report. Exact `sts:AssumeRole` statements are `limited`. A skipped wildcard or other action is `partial`. A recorded boundary is `recorded_not_evaluated`. SCPs, RCPs, session policies, and resource policies stay `not_collected`. Before the snapshot is returned, principal, policy, attachment, and boundary counts are checked against the input records. A mismatch raises `RuntimeError`.
+
+`collect_live_account` raises `LiveCollectionDisabled` and imports no AWS SDK.
+
+## Collector policy (defined, not attached)
+
+`docs/policies/iam-readonly-collector.json` lists twelve `iam:Get*` and `iam:List*` actions. `READ_ONLY_ACTIONS` in `src/fyp_iam/engine2/collector_policy.py` is the allowlist, and tests reject a write action, a simulator action, an account ID, or an ARN. `iam:GetRole` and `iam:GetUser` are the reads that would show a trust policy and a boundary attachment. The template does not grant group, SCP, RCP, session-policy, or resource-policy reads, and it is not attached to an account.
+
+`POST /v1/analyses/synthetic` normalizes a `SyntheticAccount`, then runs the existing local verifier. The response includes the snapshot, the coverage report, and the findings. It does not contact AWS.
+
 ## Explicit non-goals
 
 - Reconstructing every AWS service authorization model in the first version.

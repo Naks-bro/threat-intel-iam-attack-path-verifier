@@ -105,7 +105,14 @@ def analyze(
             )
         for bound in batch.walks:
             path = build_attack_path(snapshot, rule, bound.walk, info)
-            verification = verify_path(snapshot, rule, path, resolutions, when)
+            verification = verify_path(
+                snapshot,
+                rule,
+                path,
+                resolutions,
+                when,
+                binding=dict(bound.binding),
+            )
             finding = build_finding(snapshot, rule, path, verification)
             rows.append(
                 (

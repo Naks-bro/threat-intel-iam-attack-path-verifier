@@ -12,7 +12,7 @@
 | D-006 | Policy Simulator is a pre-check with explicit limitations | Proposed | Pending implementation test |
 | D-007 | CloudGoat verification is scenario-mapped and opt-in | Proposed | Pending guide/account-owner approval |
 | D-008 | GNN and Redis are deferred until justified | Proposed | Pending vertical-slice measurements |
-| D-009 | First executable slice is local fixtures, bounded BFS, and fixture verdicts | Proposed | `decisions/ADR-004-local-fixture-vertical-slice.md` |
+| D-010 | A source node may be one family or a combination. Strength counts distinct families. NVD and CISA KEV are pinned free feeds. AWS TTC waits. | Proposed | `decisions/ADR-007-source-strength.md` |
 
 ## Highest-priority open questions
 
@@ -33,7 +33,6 @@
 ### Sources and rules
 
 - What official export/API or stable snapshot will be used for AWS TTC?
-- Which OWASP project/release is in scope?
 - What is the exact supported rule DSL and AWS action/resource vocabulary?
 - Who may approve a rule, and is approval scoped by environment/dataset?
 
