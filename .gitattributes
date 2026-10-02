@@ -1,0 +1,2 @@
+# Pinned artifact hashes include the exact bytes. Do not convert line endings.
+src/fyp_iam/engine1/artifacts/*.json -text

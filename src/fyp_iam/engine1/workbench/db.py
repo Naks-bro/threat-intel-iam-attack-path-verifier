@@ -225,6 +225,7 @@ def _insert_import(session: Session, snapshot: WorkbenchSnapshot) -> None:
                 official_reference=snapshot.official_reference,
             )
         )
+        session.flush()
     session.add(
         SourceRunRow(
             run_id=run_id,
@@ -248,6 +249,7 @@ def _insert_import(session: Session, snapshot: WorkbenchSnapshot) -> None:
             retrieved_at=retrieved,
         )
     )
+    session.flush()
     session.add(
         NormalizedRecordRow(
             record_id=snapshot.record_id,
@@ -259,6 +261,7 @@ def _insert_import(session: Session, snapshot: WorkbenchSnapshot) -> None:
             aws_iam_relevant=snapshot.aws_iam_relevant,
         )
     )
+    session.flush()
     session.add(
         EvidenceClaimRow(
             claim_id=stable_id("claim", snapshot.record_id, "excerpt"),
@@ -275,6 +278,7 @@ def _insert_import(session: Session, snapshot: WorkbenchSnapshot) -> None:
             rule_id=snapshot.rule_id,
         )
     )
+    session.flush()
     if snapshot.rule_json is not None and snapshot.rule_version is not None:
         session.add(
             RuleVersionRow(
