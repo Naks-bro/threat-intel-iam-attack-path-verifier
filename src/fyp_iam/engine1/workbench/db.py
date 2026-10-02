@@ -226,6 +226,7 @@ def _insert_import(session: Session, snapshot: WorkbenchSnapshot) -> None:
             )
         )
         session.flush()
+    # Flush each parent before its children. One unit of work can insert a child first.
     session.add(
         SourceRunRow(
             run_id=run_id,
@@ -238,6 +239,7 @@ def _insert_import(session: Session, snapshot: WorkbenchSnapshot) -> None:
             content_hash=snapshot.content_hash,
         )
     )
+    session.flush()
     session.add(
         RawArtifactRow(
             artifact_row_id=artifact_row_id,
