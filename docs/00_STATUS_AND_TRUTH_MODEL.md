@@ -38,7 +38,21 @@ The statements in this section describe this implementation repository after the
 
 ## Engine 1 foundry slice
 
-**Verified version-bound quality artifact, 2026-10-03:** Task P6.1 now has a typed immutable deterministic report bound to the rule version, semantic hash, and evidence snapshot hash. Missing required checks become skipped/incomplete; optional disagreement and unavailable tools remain visible; empty or contradictory passing corpus results fail. The preview API and React dossier expose the report, and generated frontend types/fixtures are checked by pytest against the provider schema. The normal persisted-rule response remains nullable until P6.2. Local verification passed 181 non-PostgreSQL tests, 16 frontend tests, the frontend build, three Edge browser flows, Ruff, mypy, and diff whitespace checks. No coverage percentage, measured validator timings, PostgreSQL report storage, human approval, or stable-publication claim follows from this artifact. See `docs/18_RULE_QUALITY_REPORT.md`.
+**Verified local quality persistence, 2026-10-03:**
+Migration 0005 and `quality_store.py` add immutable semantic reports and separate
+run observations. Rule detail reads the latest stored report and rejects corrupt
+content; missing reports remain null. Nineteen storage-boundary/route tests pass,
+including additive PostgreSQL SQL generation and null/partial API contracts.
+Five PostgreSQL integration tests passed on an isolated 17.11 cluster; fresh
+migration, reconstructed older-schema upgrade, and actual restart durability
+passed. The initial database skips were superseded by these observed checks.
+New validation writes
+use null rather than fabricated row-index timings; historical placeholders remain
+excluded from experiments. P6.2's local checks are satisfied. No managed migration,
+production-scale durability, or current remote CI result is claimed. ADR-010 is
+Proposed; see `19_POSTGRES_VERIFICATION.md` for the exact environment and evidence.
+
+**Verified version-bound quality artifact, 2026-10-03:** Task P6.1 now has a typed immutable deterministic report bound to the rule version, semantic hash, and evidence snapshot hash. Missing required checks become skipped/incomplete; optional disagreement and unavailable tools remain visible; empty or contradictory passing corpus results fail. The preview API and React dossier expose the report, and generated frontend types/fixtures are checked by pytest against the provider schema. The persisted response stays nullable when no stored report exists. Local verification passed 181 non-PostgreSQL tests, 16 frontend tests, the frontend build, three Edge browser flows, Ruff, mypy, and diff whitespace checks. That P6.1 checkpoint did not itself prove coverage, measured validator timings, PostgreSQL report storage, human approval, or stable publication. The later local persistence result is the paragraph above. See `docs/18_RULE_QUALITY_REPORT.md`.
 
 **Verified multi-page control plane, 2026-10-03:** the React portal now renders seven separate hash-routed workspaces with deep links, active navigation, route-heading focus, and an architecture view that labels implemented, partial, and planned capabilities. Thirteen frontend tests, the production build, and three Edge browser flows passed, including all-page overflow checks at 320/768/1024/1440px. Pipeline assurance no longer appears complete when a required check fails; stage statuses have text labels. The overview no longer embeds the full candidate dossier. The backend regression suite passed 158 non-PostgreSQL tests, mypy, Ruff lint, and formatting. See `docs/17_ENGINE_1_ARCHITECTURE.md` for the page map and completion audit. This does not verify current PostgreSQL durability, real AI critique, the remaining rule families, exact-version review, stable publication, or production deployment.
 

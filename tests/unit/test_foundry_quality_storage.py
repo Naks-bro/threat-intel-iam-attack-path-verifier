@@ -191,3 +191,32 @@ def test_frozen_migration_emits_additive_postgres_sql():
     assert "DROP TABLE" not in sql and "UPDATE " not in sql
     with pytest.raises(RuntimeError, match="archival"):
         migration.downgrade()
+
+
+@pytest.mark.parametrize("missing", [True, False])
+def test_persisted_api_keeps_missing_or_partial_report(monkeypatch, missing):
+    """Contract test: mocked repository, real non-preview route and serialization."""
+    from fastapi.testclient import TestClient
+
+    from fyp_iam.api.app import create_app
+    from fyp_iam.engine1.foundry.preview import preview_rule
+    from fyp_iam.engine1.foundry.quality import build_quality_report
+
+    report, _ = _inputs()
+    body = preview_rule(report.rule_version_id)
+    assert body is not None
+    inputs = build_foundry(persisted=False, storage="not_written")
+    partial = build_quality_report(
+        inputs["candidate"],
+        [row for row in inputs["validations"] if row["validator_name"] != "ontology"],
+    )
+    body["quality_report"] = None if missing else partial.model_dump(mode="json")
+    monkeypatch.setattr("fyp_iam.api.app.read_rule", lambda _url, _id: body)
+    with TestClient(
+        create_app(database_url="postgresql+psycopg://test@127.0.0.1/fyp_iam")
+    ) as client:
+        response = client.get(f"/v1/foundry/rules/{report.rule_version_id}")
+    assert response.status_code == 200
+    assert response.json()["quality_report"] == body["quality_report"]
+    if not missing:
+        assert response.json()["quality_report"]["status"] == "incomplete"

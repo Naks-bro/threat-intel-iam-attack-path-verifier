@@ -22,7 +22,7 @@ The portal now has seven URL-addressable workspaces: Overview, Pipeline, Source 
 
 The candidate dossier separates required deterministic checks from optional external tools. Each result shows its status and any textual finding; scenario outcomes appear separately. In the pinned preview, ten required checks pass, while four optional tools are unavailable because they are not installed. Neither the unavailable tools nor the schema-only fake verifier should be described as independent validation or a live AI review.
 
-The preview also exposes a [version-bound quality report](docs/18_RULE_QUALITY_REPORT.md), with an integrity hash, validator/corpus versions, explicit missing checks, and nullable timings. Frontend types and its test fixture are generated from the backend contract. Historical database rows do not yet have persisted reports; the UI labels those reports unavailable. A passing deterministic report is not human approval or stable publication.
+The preview also exposes a [version-bound quality report](docs/18_RULE_QUALITY_REPORT.md), with an integrity hash, validator/corpus versions, explicit missing checks, and nullable timings. Frontend types and its test fixture are generated from the backend contract. Migration 0005 and the new run writer add report storage/history; [isolated PostgreSQL migration and restart checks passed](docs/19_POSTGRES_VERIFICATION.md). Managed deployment remains unverified. Historical versions without reports remain unavailable. A passing deterministic report is not human approval or stable publication.
 
 ```text
 pinned local technique

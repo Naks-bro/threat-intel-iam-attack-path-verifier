@@ -4,10 +4,12 @@ import os
 from datetime import UTC, datetime, timedelta
 
 import pytest
+from fastapi.testclient import TestClient
 from sqlalchemy import create_engine, func, select
 from sqlalchemy.engine import make_url
 from sqlalchemy.orm import Session
 
+from fyp_iam.api.app import create_app
 from fyp_iam.engine1.foundry.models import (
     PipelineRunRow,
     QualityObservationRow,
@@ -109,6 +111,22 @@ def test_partial_report_preserves_history_and_run_idempotency() -> None:
             latest = read_latest_quality_report(session, version)
             assert latest is not None and latest.status == "incomplete"
             assert session.get(QualityReportRow, original.report_id) is not None
+            artifact = session.get(QualityReportRow, partial.report_id)
+            assert artifact is not None
+            artifact.report_hash = "sha256:" + "0" * 64
+            with pytest.raises(ValueError, match="binding"):
+                read_latest_quality_report(session, version)
             session.rollback()
     finally:
         engine.dispose()
+
+
+def test_persisted_api_returns_bound_quality_and_missing_rule() -> None:
+    url = _test_url()
+    overview = persist_foundry(url)
+    report = QualityReport.model_validate(overview["quality_report"])
+    with TestClient(create_app(database_url=url)) as client:
+        response = client.get(f"/v1/foundry/rules/{report.rule_version_id}")
+        assert response.status_code == 200
+        assert response.json()["quality_report"] == report.model_dump(mode="json")
+        assert client.get("/v1/foundry/rules/version_missing").status_code == 404

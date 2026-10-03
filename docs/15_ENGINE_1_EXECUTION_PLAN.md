@@ -294,6 +294,19 @@ P12                      -> P13 FYP evidence package
 
 ### Task P6.2: Persist and expose the quality report
 
+**2026-10-03 local verification checkpoint:** migration 0005,
+immutable report/per-run observation tables, transactional writer, and bounded
+latest-report reader are in the worktree. Rule detail exposes stored reports and
+keeps missing reports null. New legacy validation writes use unknown/null timings
+instead of row indices. Nineteen storage-boundary/route tests pass. Five PostgreSQL
+integration tests passed on an isolated 17.11 cluster, including report history,
+deduplication, tamper rejection, and stored API serialization. Fresh migration,
+reconstructed older-schema upgrade, and actual stop/start durability passed.
+P6.2's listed local acceptance/verification checks are satisfied; permanent
+restart orchestration, current remote CI, and managed deployment remain broader
+release work. See `18_RULE_QUALITY_REPORT.md`, `19_POSTGRES_VERIFICATION.md`, and
+Proposed ADR-010. No managed database was changed.
+
 **Description:** Store the report against the exact rule version and expose it through rule detail.
 
 **Acceptance criteria:**
