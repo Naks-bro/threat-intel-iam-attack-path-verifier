@@ -4,8 +4,10 @@ Older history is `git log`. This file records the workbench branch after it dive
 
 ## 2026-10-03
 
-- Recorded recovery, deployment, and AWS status for a new machine. GitHub remains the source of truth.
-- Preserved the local foundry persistence work: Alembic schema `foundry`, optional Supabase connection settings, and the portal that reads stored rules.
+- `6bb9009` Recorded recovery, deployment, and AWS status for a new machine.
+- `b1f3ac5` Preserved the foundry schema and optional PostgreSQL connection settings.
+- `61127b8` Preserved the foundry portal, quality report, and stored-rule pipeline.
+- `0b59a2d` Preserved the project Cursor skills and the ECC workflow rule.
 - `engine1-curation-workbench` already contained the pinned source-to-experimental-rule slice through `0b682f5`.
 
 ## Already on `engine1-curation-workbench`
