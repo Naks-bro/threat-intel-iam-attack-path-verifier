@@ -88,4 +88,4 @@ jobs:
             sleep 1
           done
           cd frontend
-          npx playwright test
+          npx playwright test e2e/foundry.spec.ts e2e/foundry-offline.spec.ts

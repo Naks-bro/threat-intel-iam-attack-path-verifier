@@ -4,6 +4,7 @@ Older history is `git log`. This file records the workbench branch after it dive
 
 ## 2026-10-03
 
+- The live portal check covers the stored-rule flow. The offline preview spec stays local because it expects the preview API.
 - `6bb9009` Recorded recovery, deployment, and AWS status for a new machine.
 - `b1f3ac5` Preserved the foundry schema and optional PostgreSQL connection settings.
 - `61127b8` Preserved the foundry portal, quality report, and stored-rule pipeline.
