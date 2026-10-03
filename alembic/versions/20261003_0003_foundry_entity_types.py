@@ -22,17 +22,21 @@ _SOURCE = (
 
 
 def upgrade() -> None:
-    op.execute(sa.text("ALTER TABLE normalized_entities DROP CONSTRAINT IF EXISTS ck_entity_type"))
-    op.create_check_constraint("ck_entity_type", "normalized_entities", _ENTITY)
-    op.execute(sa.text("ALTER TABLE sources DROP CONSTRAINT IF EXISTS ck_sources_type"))
-    op.create_check_constraint("ck_sources_type", "sources", _SOURCE)
+    op.execute(
+        sa.text("ALTER TABLE foundry.normalized_entities DROP CONSTRAINT IF EXISTS ck_entity_type")
+    )
+    op.create_check_constraint("ck_entity_type", "normalized_entities", _ENTITY, schema="foundry")
+    op.execute(sa.text("ALTER TABLE foundry.sources DROP CONSTRAINT IF EXISTS ck_sources_type"))
+    op.create_check_constraint("ck_sources_type", "sources", _SOURCE, schema="foundry")
     op.execute(
         sa.text(
             """
-            CREATE TABLE IF NOT EXISTS ai_suggestions (
+            CREATE TABLE IF NOT EXISTS foundry.ai_suggestions (
                 suggestion_id VARCHAR(80) PRIMARY KEY,
-                verification_id VARCHAR(80) NOT NULL REFERENCES ai_verifications(verification_id),
-                rule_version_id VARCHAR(80) NOT NULL REFERENCES rule_versions(version_id),
+                verification_id VARCHAR(80) NOT NULL
+                    REFERENCES foundry.ai_verifications(verification_id),
+                rule_version_id VARCHAR(80) NOT NULL
+                    REFERENCES foundry.rule_versions(version_id),
                 suggestion_json TEXT NOT NULL,
                 recorded_at TIMESTAMPTZ NOT NULL
             )
@@ -42,17 +46,21 @@ def upgrade() -> None:
 
 
 def downgrade() -> None:
-    op.execute(sa.text("DROP TABLE IF EXISTS ai_suggestions"))
-    op.execute(sa.text("ALTER TABLE normalized_entities DROP CONSTRAINT IF EXISTS ck_entity_type"))
+    op.execute(sa.text("DROP TABLE IF EXISTS foundry.ai_suggestions"))
+    op.execute(
+        sa.text("ALTER TABLE foundry.normalized_entities DROP CONSTRAINT IF EXISTS ck_entity_type")
+    )
     op.create_check_constraint(
         "ck_entity_type",
         "normalized_entities",
         "entity_type in ('technique','cloud_behavior','aws_action','aws_resource',"
         "'condition_key','vulnerability','mitigation','attack_primitive_ref')",
+        schema="foundry",
     )
-    op.execute(sa.text("ALTER TABLE sources DROP CONSTRAINT IF EXISTS ck_sources_type"))
+    op.execute(sa.text("ALTER TABLE foundry.sources DROP CONSTRAINT IF EXISTS ck_sources_type"))
     op.create_check_constraint(
         "ck_sources_type",
         "sources",
         "source_type in ('taxonomy','service_reference','community_behavior','contextual')",
+        schema="foundry",
     )

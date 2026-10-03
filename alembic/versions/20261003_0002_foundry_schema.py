@@ -27,8 +27,9 @@ _CHECKPOINT = (
 
 
 def upgrade() -> None:
+    op.execute(sa.text("CREATE SCHEMA IF NOT EXISTS foundry"))
     for name in _CHECKPOINT:
-        op.execute(sa.text(f"DROP TABLE IF EXISTS {name} CASCADE"))
+        op.execute(sa.text(f"DROP TABLE IF EXISTS public.{name} CASCADE"))
     from fyp_iam.engine1.foundry.models import Base
 
     Base.metadata.create_all(op.get_bind())

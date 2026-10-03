@@ -11,7 +11,6 @@ from sqlalchemy import (
     Text,
     create_engine,
     select,
-    text,
 )
 from sqlalchemy.orm import DeclarativeBase, Mapped, Session, mapped_column, sessionmaker
 
@@ -192,22 +191,12 @@ class PostgresWorkbenchStore:
             raise DatabaseUnavailable("PostgreSQL did not return the import") from exc
 
 
-def database_status(url: str | None) -> tuple[str, str]:
-    """Return ``(ok|unavailable, detail)``. The detail never includes the URL."""
+def database_status(url: str | None, *, probe: bool = True) -> tuple[str, str]:
+    """Return a health state and a fixed detail code. Neither includes the URL."""
 
-    if not url:
-        return "unavailable", "not_configured"
-    if url.startswith("sqlite"):
-        return "unavailable", "sqlite_rejected"
-    engine = create_engine(url, pool_pre_ping=True, connect_args={"connect_timeout": 3})
-    try:
-        with engine.connect() as connection:
-            connection.execute(text("SELECT 1"))
-    except Exception:
-        return "unavailable", "unreachable"
-    finally:
-        engine.dispose()
-    return "ok", "reachable"
+    from fyp_iam.persistence.status import database_status as reported
+
+    return reported(url, probe=probe)
 
 
 def _insert_import(session: Session, snapshot: WorkbenchSnapshot) -> None:
