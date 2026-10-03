@@ -29,33 +29,15 @@ from fyp_iam.contracts.models import (
     TechniqueRef,
 )
 from fyp_iam.core.ids import sha256_key, stable_id
+from fyp_iam.engine1.foundry.corpus import load_corpus, scenario_verdict
+from fyp_iam.engine1.foundry.ontology import ONTOLOGY_VERSION, ontology_findings
+from fyp_iam.engine1.foundry.quality import build_quality_report
 
 GENERATOR = "foundry-template-credentials-0.1"
 COMPILER_VERSION = "foundry-compiler-0.1"
-CORPUS_VERSION = "iam-corpus-0.1"
+CORPUS_VERSION = "iam-corpus-0.2"
 PROMPT_VERSION = "verifier-prompt-0.1"
 _WHEN = datetime(2026, 10, 3, tzinfo=UTC)
-
-_CORPUS: tuple[dict[str, object], ...] = (
-    {
-        "scenario_id": "allow-create-access-key",
-        "expect": "match",
-        "allow": ["iam:CreateAccessKey"],
-        "deny": [],
-    },
-    {
-        "scenario_id": "list-access-keys-only",
-        "expect": "no_match",
-        "allow": ["iam:ListAccessKeys"],
-        "deny": [],
-    },
-    {
-        "scenario_id": "explicit-deny-create-access-key",
-        "expect": "no_match",
-        "allow": ["iam:CreateAccessKey"],
-        "deny": ["iam:CreateAccessKey"],
-    },
-)
 
 
 class AttackPrimitive(ContractModel):
@@ -138,6 +120,7 @@ class Snapshot:
     claims: tuple[ClaimDraft, ...]
     relations: tuple[RelationDraft, ...]
     payloads: dict[str, bytes]
+    disabled_sources: tuple[SourceDraft, ...] = ()
 
 
 @dataclass(frozen=True)
@@ -182,6 +165,7 @@ DEFAULT_TOOLS: tuple[ExternalValidator, ...] = (
     OptionalTool("cloudsplaining"),
     OptionalTool("pmapper"),
 )
+OPTIONAL_VALIDATOR_NAMES = frozenset(tool.name for tool in DEFAULT_TOOLS)
 
 
 def mapping_decision(
@@ -222,6 +206,7 @@ def compile_snapshot(
     candidate = _compile_credentials(snapshot, primitives)
     validations = _validate(candidate, snapshot) if candidate is not None else []
     validations.extend(_external(candidate, tools) if candidate is not None else [])
+    quality = build_quality_report(candidate, validations) if candidate is not None else None
     required = [item for item in validations if item["result"] != "unavailable"]
     passed = bool(candidate) and all(item["result"] == "pass" for item in required)
     disagreed = any(item["result"] == "fail" for item in validations if item["result"] != "pass")
@@ -234,6 +219,17 @@ def compile_snapshot(
             validations_passed=passed and not disagreed,
             evidence_ids=evidence_ids,
             source_text="",
+        )
+    else:
+        from fyp_iam.engine1.foundry.verifier_models import checked_verification
+
+        ai = checked_verification(
+            ai,
+            version_id=str(candidate["version_id"]) if candidate is not None else "none",
+            evidence_hash=(
+                str(candidate["evidence_snapshot_hash"]) if candidate is not None else "none"
+            ),
+            evidence_ids=evidence_ids,
         )
     suggestions = ai.get("suggestions", [])
     if not isinstance(suggestions, list):
@@ -250,6 +246,7 @@ def compile_snapshot(
         "primitives": [_primitive_view(item) for item in primitives],
         "candidate": candidate,
         "validations": validations,
+        "quality_report": quality.model_dump(mode="json") if quality is not None else None,
         "ai_verification": ai,
         "suggestions": suggestions,
         "publication": publication,
@@ -447,6 +444,7 @@ def _validate(candidate: dict[str, object], snapshot: Snapshot) -> list[dict[str
     if not isinstance(rule_body, dict):
         raise RuntimeError("compiled rule missing")
     parsed = ApprovedRule.model_validate(rule_body)
+    ontology_errors = ontology_findings(parsed)
     action = parsed.required_capabilities[0].action
     action_entity = next(
         (item for item in snapshot.entities if item.native_id == action),
@@ -459,13 +457,14 @@ def _validate(candidate: dict[str, object], snapshot: Snapshot) -> list[dict[str
         item.review_state == "rejected" and item.to_native_id == "T1098.001"
         for item in snapshot.relations
     )
-    scenario_findings = _scenario_findings(action)
+    scenario_findings = _scenario_findings(action, parsed.evidence_refs)
     deterministic = candidate["semantic_hash"] == _rehash(parsed)
     proposed_only = parsed.status == RuleStatus.proposed and (
         parsed.approval.decision != ApprovalDecision.approved
     )
     checks: tuple[tuple[str, bool, object], ...] = (
         ("schema", parsed.status == RuleStatus.proposed, []),
+        ("ontology", not ontology_errors, ontology_errors),
         ("aws_action_resource", action_known, []),
         ("condition_keys", True, ["This candidate declares no condition key"]),
         ("provenance", provenance, []),
@@ -482,7 +481,9 @@ def _validate(candidate: dict[str, object], snapshot: Snapshot) -> list[dict[str
     return [
         {
             "validator_name": name,
-            "validator_version": "foundry-validators-0.1",
+            "validator_version": (
+                ONTOLOGY_VERSION if name == "ontology" else "foundry-validators-0.1"
+            ),
             "result": "pass" if ok else "fail",
             "corpus_version": CORPUS_VERSION,
             "findings": findings,
@@ -508,6 +509,7 @@ def _external(
                 "validator_name": result.name,
                 "validator_version": result.version,
                 "result": result.result,
+                "optional": True,
                 "corpus_version": CORPUS_VERSION,
                 "findings": list(result.findings),
             }
@@ -515,20 +517,18 @@ def _external(
     return rows
 
 
-def _scenario_findings(action: str) -> list[dict[str, str]]:
+def _scenario_findings(action: str, evidence_ids: list[str]) -> list[dict[str, str]]:
     findings: list[dict[str, str]] = []
-    for scenario in _CORPUS:
-        allow = scenario["allow"]
-        deny = scenario["deny"]
-        if not isinstance(allow, list) or not isinstance(deny, list):
-            raise RuntimeError("scenario corpus is malformed")
-        matched = action in allow and action not in deny
-        expect_match = scenario["expect"] == "match"
+    for scenario in load_corpus().cases:
+        actual = scenario_verdict(action, scenario)
+        cited = set(scenario.evidence_refs).issubset(evidence_ids)
         findings.append(
             {
-                "scenario_id": str(scenario["scenario_id"]),
-                "expect": str(scenario["expect"]),
-                "result": "pass" if matched == expect_match else "fail",
+                "scenario_id": scenario.scenario_id,
+                "case_class": scenario.case_class,
+                "expect": scenario.expected_verdict,
+                "actual": actual,
+                "result": "pass" if actual == scenario.expected_verdict and cited else "fail",
             }
         )
     return findings
@@ -543,22 +543,55 @@ def _evaluation(
     ai: dict[str, object],
     passed: bool,
 ) -> dict[str, object]:
-    corpus_pass = any(
-        item["validator_name"] == "scenario_corpus" and item["result"] == "pass"
-        for item in validations
+    corpus = load_corpus()
+    scenario_row = next(
+        (item for item in validations if item["validator_name"] == "scenario_corpus"),
+        None,
     )
+    raw_findings = scenario_row.get("findings") if scenario_row else None
+    findings = raw_findings if isinstance(raw_findings, list) else []
+    actual_by_id = {
+        item["scenario_id"]: item["actual"]
+        for item in findings
+        if isinstance(item, dict) and "scenario_id" in item and "actual" in item
+    }
+    tp = sum(
+        case.expected_verdict == "match" and actual_by_id.get(case.scenario_id) == "match"
+        for case in corpus.cases
+    )
+    fp = sum(
+        case.expected_verdict == "no_match" and actual_by_id.get(case.scenario_id) == "match"
+        for case in corpus.cases
+    )
+    fn = sum(
+        case.expected_verdict == "match" and actual_by_id.get(case.scenario_id) != "match"
+        for case in corpus.cases
+    )
+    tn = sum(
+        case.expected_verdict == "no_match" and actual_by_id.get(case.scenario_id) == "no_match"
+        for case in corpus.cases
+    )
+    corpus_pass = scenario_row is not None and scenario_row["result"] == "pass"
     return {
-        "corpus_version": CORPUS_VERSION,
-        "labeled_positive": 1,
-        "labeled_near_negative": 2,
-        "candidate_precision": 1.0 if corpus_pass else 0.0,
-        "candidate_recall": 1.0 if corpus_pass else 0.0,
-        "false_positive_rate": 0.0 if corpus_pass else 1.0,
-        "false_negative_rate": 0.0 if corpus_pass else 1.0,
+        "corpus_version": corpus.dataset_version,
+        "labeled_positive": sum(case.case_class == "positive" for case in corpus.cases),
+        "labeled_near_negative": sum(case.case_class == "near_negative" for case in corpus.cases),
+        "labeled_missing_context": sum(
+            case.case_class == "missing_context" for case in corpus.cases
+        ),
+        "labeled_adversarial": sum(case.case_class == "adversarial" for case in corpus.cases),
+        "confusion_matrix": {"tp": tp, "fp": fp, "fn": fn, "tn": tn},
+        "candidate_precision": tp / (tp + fp) if tp + fp else None,
+        "candidate_recall": tp / (tp + fn) if tp + fn else None,
+        "false_positive_rate": fp / (fp + tn) if fp + tn else None,
+        "false_negative_rate": fn / (fn + tp) if fn + tp else None,
+        "corpus_pass": corpus_pass,
         "deterministic_pass": passed,
         "ai_verdict": ai.get("verdict", "needs_review"),
         "ai_ablation": (
-            "no_difference_on_this_corpus" if passed and ai.get("verdict") == "pass" else "differs"
+            "not_evaluated_fake_verifier"
+            if ai.get("provider") == "fake"
+            else "not_evaluated_without_labeled_defects"
         ),
         "source_freshness": "pinned_snapshot",
         "incremental_refresh": "same_pin_hash_is_unchanged",

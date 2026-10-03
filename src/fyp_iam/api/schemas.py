@@ -14,6 +14,7 @@ from fyp_iam.contracts.models import (
     ensure_utc,
 )
 from fyp_iam.core.report import AnalysisReport
+from fyp_iam.engine1.foundry.quality import QualityReport
 from fyp_iam.engine1.models import ApprovalEvent, NormalizedTechnique
 from fyp_iam.engine2.coverage import NormalizationCoverage
 from fyp_iam.engine2.records import SyntheticAccount
@@ -105,4 +106,107 @@ class ApprovalResponse(ContractModel):
             raise ValueError("an approved decision must export an approved rule")
         if not approved and self.exported_rule is not None:
             raise ValueError("a rejected decision must not export a rule")
+        return self
+
+
+class FoundrySource(ContractModel):
+    source_key: str
+    authority_tier: int = Field(ge=1, le=3)
+    source_type: str
+    version_label: str
+    enabled: bool
+    last_status: str
+
+
+class FoundryRun(ContractModel):
+    status: str
+    fetched_count: int = Field(ge=0)
+    created_count: int = Field(ge=0)
+    unchanged_count: int = Field(ge=0)
+    rejected_count: int = Field(ge=0)
+    parser_version: str
+
+
+class FoundryPrimitive(ContractModel):
+    primitive_key: str
+    outcome_category: str
+    required_actions: list[str]
+    attack_mapping_state: str
+    state_transition: str
+
+
+class FoundryRelation(ContractModel):
+    from_native_id: str
+    to_native_id: str
+    relation_type: str
+    review_state: str
+    rationale: str
+
+
+class FoundryCandidate(ContractModel):
+    rule_id: str
+    version_id: str
+    semantic_hash: str
+    lifecycle: str
+    channel: str
+
+
+class FoundryOverviewResponse(ContractModel):
+    schema_version: str = Field(pattern=r"^0\.1$")
+    database: str
+    database_detail: str
+    storage: str
+    registry: str
+    sources: list[FoundrySource]
+    run: FoundryRun | None
+    primitives: list[FoundryPrimitive]
+    relations: list[FoundryRelation]
+    candidates: list[FoundryCandidate]
+
+
+class FoundryValidation(ContractModel):
+    validator_name: str
+    result: str
+    optional: bool = False
+    findings: list[str] = Field(default_factory=list)
+
+
+class FoundryAIVerification(ContractModel):
+    provider: str
+    model: str
+    verdict: str
+
+
+class FoundryPublication(ContractModel):
+    channel: str
+
+
+class FoundryScenario(ContractModel):
+    scenario_id: str
+    case_class: str | None = None
+    expect: str
+    actual: str | None = None
+    result: str
+
+
+class FoundryRuleResponse(ContractModel):
+    rule_id: str
+    version_id: str
+    semantic_hash: str
+    lifecycle: str
+    rule: dict[str, object]
+    validations: list[FoundryValidation]
+    ai_verification: FoundryAIVerification | None
+    publication: FoundryPublication | None
+    scenarios: list[FoundryScenario]
+    quality_report: QualityReport | None = None
+
+    @model_validator(mode="after")
+    def quality_matches_version(self) -> "FoundryRuleResponse":
+        report = self.quality_report
+        if report is not None and (
+            report.rule_version_id != self.version_id
+            or report.rule_semantic_hash != self.semantic_hash
+        ):
+            raise ValueError("quality report binding does not match the rule version")
         return self

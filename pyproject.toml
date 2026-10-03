@@ -29,7 +29,7 @@ dev = [
 where = ["src"]
 
 [tool.setuptools.package-data]
-fyp_iam = ["engine1/artifacts/*.json", "engine1/foundry/pins/*.json"]
+fyp_iam = ["engine1/artifacts/*.json", "engine1/foundry/pins/*.json", "engine1/foundry/corpus/*.json"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
@@ -40,6 +40,7 @@ markers = ["postgres: requires a migrated PostgreSQL database in FYP_DATABASE_UR
 target-version = "py312"
 line-length = 100
 src = ["src", "tests", "scripts"]
+extend-exclude = [".cursor/skills"]
 
 [tool.ruff.lint]
 select = ["E", "F", "I", "UP", "B"]

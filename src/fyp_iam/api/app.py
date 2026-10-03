@@ -1,15 +1,24 @@
 """FastAPI application for local fixture analysis."""
 
+import json
+import logging
+import re
 from pathlib import Path
+from time import perf_counter
+from uuid import uuid4
 
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, Request, Response
 from fastapi.responses import HTMLResponse
+from sqlalchemy.exc import SQLAlchemyError
+from starlette.middleware.base import RequestResponseEndpoint
 
 from fyp_iam import __version__
 from fyp_iam.api.schemas import (
     AnalyzeRequest,
     ApprovalRequest,
     ApprovalResponse,
+    FoundryOverviewResponse,
+    FoundryRuleResponse,
     IntakeRequest,
     IntakeResponse,
     SyntheticAnalyzeRequest,
@@ -20,7 +29,13 @@ from fyp_iam.core.report import AnalysisReport
 from fyp_iam.engine1.catalog import SystemCatalog, load_system_catalog
 from fyp_iam.engine1.dataset import CloudTechniqueDataset, load_cloud_technique_dataset
 from fyp_iam.engine1.errors import IntakeError
-from fyp_iam.engine1.foundry.store import persist_foundry, read_registry, read_rule
+from fyp_iam.engine1.foundry.preview import preview_overview, preview_rule
+from fyp_iam.engine1.foundry.store import (
+    FoundryRunInProgress,
+    persist_foundry,
+    read_registry,
+    read_rule,
+)
 from fyp_iam.engine1.intake import (
     decide_candidate,
     explain_proposal,
@@ -52,12 +67,21 @@ from fyp_iam.fixtures.loader import (
     list_fixture_ids,
     load_fixture,
 )
+from fyp_iam.persistence.redact import install_redaction
+from fyp_iam.persistence.urls import prepare_url
 
 _UNSET = object()
+_REQUEST_ID = re.compile(r"^[A-Za-z0-9_.:-]{1,80}$")
+_LOGGER = logging.getLogger("uvicorn.error.fyp_iam")
+
+
+def _log_event(level: int, event: str, **fields: object) -> None:
+    _LOGGER.log(level, "%s", json.dumps({"event": event, **fields}, sort_keys=True))
 
 
 def _unavailable_registry(state: str, detail: str) -> dict[str, object]:
     return {
+        "schema_version": "0.1",
         "database": state,
         "database_detail": detail,
         "storage": "not_written",
@@ -74,6 +98,7 @@ def create_app(
     fixture_dir: Path | None = None,
     *,
     database_url: str | None | object = _UNSET,
+    foundry_preview: bool = False,
 ) -> FastAPI:
     application = FastAPI(
         title="FYP IAM local verification",
@@ -82,21 +107,66 @@ def create_app(
             "Local fixture pipeline. It does not connect to AWS, Neo4j, Redis, or an LLM."
         ),
     )
+    install_redaction()
     directory = fixture_dir or default_fixture_dir()
     application.state.fixture_dir = directory
-    if database_url is _UNSET:
-        resolved_url = database_url_from_env()
+    if foundry_preview:
+        raw_url = None
+    elif database_url is _UNSET:
+        raw_url = database_url_from_env()
     elif isinstance(database_url, str):
-        resolved_url = database_url
+        raw_url = database_url
+    else:
+        raw_url = None
+    if raw_url:
+        prepared_url, prepare_error = prepare_url(raw_url)
+        resolved_url = raw_url if prepare_error else prepared_url
     else:
         resolved_url = None
 
+    @application.middleware("http")
+    async def observe_request(request: Request, call_next: RequestResponseEndpoint) -> Response:
+        supplied = request.headers.get("X-Request-ID", "")
+        request_id = supplied if _REQUEST_ID.fullmatch(supplied) else uuid4().hex
+        request.state.request_id = request_id
+        started = perf_counter()
+        try:
+            response = await call_next(request)
+        except Exception as exc:
+            _log_event(
+                logging.ERROR,
+                "http_request_failed",
+                request_id=request_id,
+                method=request.method,
+                path=request.url.path,
+                error_type=type(exc).__name__,
+                duration_ms=round((perf_counter() - started) * 1000, 2),
+            )
+            raise
+        duration_ms = round((perf_counter() - started) * 1000, 2)
+        response.headers["X-Request-ID"] = request_id
+        response.headers["Server-Timing"] = f"app;dur={duration_ms}"
+        _log_event(
+            logging.INFO,
+            "http_request_completed",
+            request_id=request_id,
+            method=request.method,
+            path=request.url.path,
+            status_code=response.status_code,
+            duration_ms=duration_ms,
+        )
+        return response
+
     @application.get("/health")
     def health() -> dict[str, str]:
-        state, detail = database_status(resolved_url)
+        state, detail = (
+            ("not_connected", "offline_preview")
+            if foundry_preview
+            else database_status(resolved_url)
+        )
         return {
             "status": "ok",
-            "mode": "local_fixtures",
+            "mode": "foundry_preview" if foundry_preview else "local_fixtures",
             "aws": "not_connected",
             "engine1": "local_intake",
             "engine2": "synthetic_normalizer",
@@ -118,7 +188,7 @@ def create_app(
     @application.post("/v1/workbench/imports/{pin_id}", response_model=WorkbenchView)
     def import_workbench_pin(pin_id: str) -> WorkbenchView:
         state, _detail = database_status(resolved_url)
-        if state != "ok" or resolved_url is None:
+        if state != "available" or resolved_url is None:
             raise HTTPException(status_code=503, detail="database_unavailable")
         try:
             snapshot = build_snapshot(pin_id)
@@ -137,33 +207,82 @@ def create_app(
             raise HTTPException(status_code=503, detail="database_unavailable")
         return view_from_snapshot(stored, persisted=True)
 
-    @application.get("/v1/foundry/overview")
+    @application.get("/v1/foundry/overview", response_model=FoundryOverviewResponse)
     def foundry_overview() -> dict[str, object]:
-        state, detail = database_status(resolved_url)
-        if state != "ok" or not isinstance(resolved_url, str):
-            return _unavailable_registry(state, detail)
-        return read_registry(resolved_url)
+        if foundry_preview:
+            return preview_overview()
+        if not isinstance(resolved_url, str):
+            return _unavailable_registry("not_configured", "not_configured")
+        try:
+            return read_registry(resolved_url)
+        except (DatabaseUnavailable, SQLAlchemyError):
+            return _unavailable_registry("unavailable", "unreachable")
 
-    @application.get("/v1/foundry/rules/{version_id}")
+    @application.get("/v1/foundry/rules/{version_id}", response_model=FoundryRuleResponse)
     def foundry_rule(version_id: str) -> dict[str, object]:
-        state, _detail = database_status(resolved_url)
-        if state != "ok" or not isinstance(resolved_url, str):
+        if foundry_preview:
+            rule = preview_rule(version_id)
+            if rule is None:
+                raise HTTPException(status_code=404, detail="rule_not_found")
+            return rule
+        if not isinstance(resolved_url, str):
             raise HTTPException(status_code=503, detail="database_unavailable")
-        rule = read_rule(resolved_url, version_id)
+        try:
+            rule = read_rule(resolved_url, version_id)
+        except (DatabaseUnavailable, SQLAlchemyError) as exc:
+            raise HTTPException(status_code=503, detail="database_unavailable") from exc
         if rule is None:
             raise HTTPException(status_code=404, detail="rule_not_found")
         return rule
 
-    @application.post("/v1/foundry/runs")
-    def foundry_run() -> dict[str, object]:
-        state, _detail = database_status(resolved_url)
-        if state != "ok" or not isinstance(resolved_url, str):
+    @application.post("/v1/foundry/runs", response_model=FoundryOverviewResponse)
+    def foundry_run(request: Request) -> dict[str, object]:
+        request_id = str(getattr(request.state, "request_id", "unknown"))
+        if foundry_preview:
+            _log_event(logging.INFO, "foundry_preview_recomputed", request_id=request_id)
+            return preview_overview()
+        if not isinstance(resolved_url, str):
+            _log_event(
+                logging.WARNING,
+                "foundry_pipeline_rejected",
+                request_id=request_id,
+                reason="database_unavailable",
+            )
             raise HTTPException(status_code=503, detail="database_unavailable")
+        started = perf_counter()
+        _log_event(logging.INFO, "foundry_pipeline_started", request_id=request_id)
         try:
             persist_foundry(resolved_url)
-            return read_registry(resolved_url)
-        except DatabaseUnavailable as exc:
-            raise HTTPException(status_code=503, detail=exc.code) from exc
+            registry = read_registry(resolved_url)
+        except FoundryRunInProgress as exc:
+            _log_event(
+                logging.WARNING,
+                "foundry_pipeline_rejected",
+                request_id=request_id,
+                reason="run_in_progress",
+            )
+            raise HTTPException(status_code=409, detail="foundry_run_in_progress") from exc
+        except (DatabaseUnavailable, SQLAlchemyError) as exc:
+            _log_event(
+                logging.ERROR,
+                "foundry_pipeline_failed",
+                request_id=request_id,
+                error_type=type(exc).__name__,
+                duration_ms=round((perf_counter() - started) * 1000, 2),
+            )
+            raise HTTPException(status_code=503, detail="database_unavailable") from exc
+        sources = registry.get("sources", [])
+        candidates = registry.get("candidates", [])
+        _log_event(
+            logging.INFO,
+            "foundry_pipeline_completed",
+            request_id=request_id,
+            duration_ms=round((perf_counter() - started) * 1000, 2),
+            registry=str(registry.get("registry", "unknown")),
+            source_count=len(sources) if isinstance(sources, list) else 0,
+            candidate_count=len(candidates) if isinstance(candidates, list) else 0,
+        )
+        return registry
 
     @application.post("/v1/analyses", response_model=AnalysisReport)
     def create_analysis(request: AnalyzeRequest) -> AnalysisReport:

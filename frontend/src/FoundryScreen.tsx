@@ -1,311 +1,209 @@
-import { useState } from "react";
+import { useEffect, useRef } from "react";
+import type { FoundryOverview, RuleDetail } from "./foundry-api";
+import {
+  FoundryIcon,
+  RegistryUnavailable,
+  StatusTag,
+} from "./FoundryPanels";
+import { ArchitecturePage, FoundryPageContent } from "./FoundryPages";
+import { FOUNDRY_PAGES, useFoundryPage } from "./foundry-navigation";
 
-export type FoundryOverview = {
-  database: string;
-  database_detail: string;
-  storage: string;
-  registry: "unavailable" | "empty" | "ready" | "partial";
-  sources: Array<{
-    source_key: string;
-    authority_tier: number;
-    source_type: string;
-    version_label: string;
-    enabled: boolean;
-    last_status?: string;
-  }>;
-  run: {
-    status: string;
-    fetched_count: number;
-    created_count: number;
-    unchanged_count: number;
-    rejected_count: number;
-    parser_version: string;
-  } | null;
-  primitives: Array<{
-    primitive_key: string;
-    outcome_category: string;
-    required_actions: string[];
-    attack_mapping_state: string;
-    state_transition: string;
-  }>;
-  relations: Array<{
-    from_native_id: string;
-    to_native_id: string;
-    relation_type: string;
-    review_state: string;
-    rationale: string;
-  }>;
-  candidates: Array<{
-    rule_id: string;
-    version_id: string;
-    semantic_hash: string;
-    lifecycle: string;
-    channel: string;
-  }>;
+export type { FoundryOverview, RuleDetail } from "./foundry-api";
+
+export type FoundryNotice = {
+  kind: "success" | "error";
+  title: string;
+  message: string;
+  requestId: string | null;
 };
-
-export type RuleDetail = {
-  rule_id: string;
-  semantic_hash: string;
-  lifecycle: string;
-  validations: Array<{ validator_name: string; result: string }>;
-  ai_verification: { provider: string; model: string; verdict: string } | null;
-  publication: { channel: string } | null;
-  scenarios: Array<{ scenario_id: string; expect: string; result: string }>;
-};
-
-const NAV = [
-  "Overview",
-  "Sources",
-  "Runs",
-  "Knowledge",
-  "Primitives",
-  "Candidates",
-  "Rule",
-  "Evaluation",
-] as const;
-
-export type SectionName = (typeof NAV)[number];
 
 export function FoundryScreen({
   overview,
   rule,
   notice,
+  requestId,
+  isRunning,
   onRun,
   onOpen,
 }: {
   overview: FoundryOverview;
   rule: RuleDetail | null;
-  notice: string;
+  notice: FoundryNotice | null;
+  requestId: string | null;
+  isRunning: boolean;
   onRun: () => void;
   onOpen: (versionId: string) => void;
 }) {
-  const [section, setSection] = useState<SectionName>("Overview");
-  const stored = overview.storage === "postgres";
-  function openCandidate(versionId: string) {
-    setSection("Rule");
-    onOpen(versionId);
-  }
+  const page = useFoundryPage();
+  const pageInfo = FOUNDRY_PAGES.find((item) => item.key === page);
+  const headingRef = useRef<HTMLHeadingElement>(null);
+  useEffect(() => {
+    document.title = `${pageInfo?.title ?? "Workspace not found"} · Evidence Foundry`;
+    headingRef.current?.focus({ preventScroll: true });
+  }, [pageInfo]);
+  const sourceSucceeded = overview.sources.filter(
+    (source) => source.enabled && source.last_status === "succeeded",
+  ).length;
+  const activeSources = overview.sources.filter((source) => source.enabled).length;
+  const sourceFailed = overview.sources.filter((source) => source.enabled && source.last_status === "failed");
+  const mappedPrimitives = overview.primitives.filter(
+    (primitive) => primitive.attack_mapping_state === "mapped",
+  ).length;
+  const acceptedRelations = overview.relations.filter(
+    (relation) => relation.review_state === "accepted",
+  ).length;
+  const registryAvailable = overview.registry !== "unavailable";
+  const storageOnline = overview.storage === "postgres";
+  const previewMode = overview.storage === "preview";
+
   return (
-    <div className="shell">
-      <aside>
-        <p className="brand">Foundry</p>
-        <nav>
-          {NAV.map((item) => (
-            <button
-              key={item}
-              type="button"
-              className={item === section ? "nav active" : "nav"}
-              onClick={() => setSection(item)}
-            >
-              {item}
-            </button>
+    <div className="foundry-shell">
+      <a className="skip-link" href="#workspace-content" onClick={(event) => { event.preventDefault(); headingRef.current?.focus(); }}>Skip to page content</a>
+      <aside className="product-rail">
+        <a className="product-mark" href="#/overview" aria-label="IAM Evidence Foundry overview">
+          <span className="product-symbol" aria-hidden="true">
+            <span />
+            <span />
+            <span />
+          </span>
+          <span className="product-name">
+            <strong>Evidence Foundry</strong>
+            <small>IAM / Engine 01</small>
+          </span>
+        </a>
+
+        <nav aria-label="Foundry navigation">
+          <p>Workspace</p>
+          {FOUNDRY_PAGES.map((item) => (
+            <a href={`#/${item.key}`} key={item.key} aria-current={page === item.key ? "page" : undefined}>
+              <FoundryIcon name={item.icon} />
+              <span>{item.label}</span>
+            </a>
           ))}
         </nav>
-      </aside>
-      <main>
-        <header>
+
+        <div className="rail-scope">
+          <p>Enforcement boundary</p>
+          <strong>Human-gated release</strong>
+          <span>AI can challenge evidence. It cannot author, approve, or publish rules.</span>
+        </div>
+
+        <div className="rail-health">
+          <span className={`health-beacon ${storageOnline ? "is-online" : "is-offline"}`} />
           <div>
-            <h1>Threat-to-rule foundry</h1>
-            <p className="muted">Automated evidence, deterministic compile, experimental publication.</p>
+            <strong>{previewMode ? "Offline preview" : storageOnline ? "Registry connected" : "Registry degraded"}</strong>
+            <span>{previewMode ? "Pinned evidence · no database" : "Private PostgreSQL schema"}</span>
           </div>
-          <p className={stored ? "badge ok" : "badge"}>
-            {stored ? "Stored in PostgreSQL" : `Not stored. Database ${overview.database_detail}`}
-          </p>
+        </div>
+      </aside>
+
+      <main className="foundry-workspace" id="workspace-content">
+        <div className="utility-bar">
+          <span>Research control plane</span>
+          <span className="utility-divider" aria-hidden="true" />
+          <span>Schema {overview.schema_version ?? "0.1"}</span>
+          <span className="utility-trace" title={requestId ?? undefined}>
+            Trace {requestId ? requestId.slice(0, 12) : "not issued"}
+          </span>
+        </div>
+
+        <header className="foundry-header">
+          <div className="header-copy">
+            <p className="section-code">EVIDENCE CONTROL / ENGINE 01</p>
+            <h1 ref={headingRef} tabIndex={-1}>{pageInfo?.title ?? "Workspace not found"}</h1>
+            <p>{pageInfo?.description ?? "This workspace address does not exist. Use the navigation to open a supported page."}</p>
+            <div className="scope-list" aria-label="Foundry scope">
+              <span>AWS IAM</span>
+              <span>Evidence-backed</span>
+              <span>Fail closed</span>
+            </div>
+          </div>
+          <div className="header-control">
+            <StatusTag value={previewMode ? "offline_preview" : overview.run?.status ?? overview.registry} />
+            <button
+              className="primary-action"
+              type="button"
+              onClick={onRun}
+              disabled={isRunning || !registryAvailable}
+              aria-describedby={!registryAvailable ? "run-disabled-reason" : undefined}
+            >
+              <FoundryIcon name="run" />
+              <span>{previewMode ? isRunning ? "Recomputing preview" : "Recompute preview" : isRunning ? "Running evidence pipeline" : "Run evidence pipeline"}</span>
+            </button>
+            {!registryAvailable ? (
+              <small id="run-disabled-reason">Restore the registry connection to run.</small>
+            ) : null}
+          </div>
         </header>
-        <RegistryState overview={overview} />
-        <Section name={section} overview={overview} rule={rule} onOpen={openCandidate} />
-        <p>
-          <button type="button" onClick={onRun}>
-            Run pipeline
-          </button>
-        </p>
-        {notice ? <p className="notice">{notice}</p> : null}
+
+        {previewMode ? (
+          <div className="preview-banner" role="status">
+            <span className="preview-label">OFFLINE PREVIEW</span>
+            <span>Pinned local evidence only. No Supabase connection, database writes, approval, or rule publication. Candidate results show eligibility, not a released rule.</span>
+          </div>
+        ) : null}
+
+        {notice ? (
+          <div className={`operation-notice is-${notice.kind}`} role="status" aria-live="polite">
+            <FoundryIcon name={notice.kind === "success" ? "verified" : "alert"} />
+            <div>
+              <strong>{notice.title}</strong>
+              <span>{notice.message}</span>
+            </div>
+            {notice.requestId ? <code>{notice.requestId}</code> : null}
+          </div>
+        ) : null}
+
+        {overview.run?.status === "partial" ? (
+          <div className="attention-strip" role="status">
+            <span className="attention-index">ATTN</span>
+            <strong>Evidence run completed with source degradation.</strong>
+            <span>
+              {sourceFailed.length || 1} connector needs attention; successful evidence remains
+              preserved.
+            </span>
+          </div>
+        ) : null}
+
+        <section className="posture-strip" aria-label="Foundry security posture">
+          <article>
+            <span>Source integrity</span>
+            <strong>{sourceSucceeded}/{activeSources}</strong>
+            <small>{previewMode ? "pinned sources loaded" : "active connectors healthy"}</small>
+          </article>
+          <article>
+            <span>Evidence graph</span>
+            <strong>{overview.relations.length}</strong>
+            <small>{acceptedRelations} accepted relations</small>
+          </article>
+          <article>
+            <span>Mapped behavior</span>
+            <strong>{mappedPrimitives}/{overview.primitives.length || 0}</strong>
+            <small>primitives mapped</small>
+          </article>
+          <article>
+            <span>Release channel</span>
+            <strong>{rule?.publication?.channel ?? "gated"}</strong>
+            <small>{overview.candidates.length} immutable version</small>
+          </article>
+        </section>
+
+        {page === "not-found" ? (
+          <section className="control-panel"><h2>Choose a supported workspace</h2><a className="workspace-link" href="#/overview">Return to overview</a></section>
+        ) : page === "architecture" ? (
+          <ArchitecturePage />
+        ) : !registryAvailable ? (
+          <RegistryUnavailable overview={overview} />
+        ) : (
+          <FoundryPageContent page={page} overview={overview} rule={rule} onOpen={onOpen} />
+        )}
+
+        <footer className="product-footer">
+          <span>Evidence Foundry / research prototype</span>
+          <span>Live AWS writes disabled</span>
+          <span>Experimental rules excluded from Engine 3 by default</span>
+        </footer>
       </main>
     </div>
-  );
-}
-
-function RegistryState({ overview }: { overview: FoundryOverview }) {
-  if (overview.registry === "unavailable") {
-    return <p className="notice">Database unavailable. The registry was not read.</p>;
-  }
-  if (overview.registry === "empty") {
-    return <p>No sources ingested yet.</p>;
-  }
-  if (overview.run?.status === "partial") {
-    return <p className="notice">Partial run. One source failed and was left uningested.</p>;
-  }
-  return null;
-}
-
-function Section({
-  name,
-  overview,
-  rule,
-  onOpen,
-}: {
-  name: SectionName;
-  overview: FoundryOverview;
-  rule: RuleDetail | null;
-  onOpen: (versionId: string) => void;
-}) {
-  if (overview.registry === "unavailable" || overview.registry === "empty") {
-    return null;
-  }
-  if (name === "Sources") {
-    return (
-      <table>
-        <thead>
-          <tr>
-            <th>Source</th>
-            <th>Tier</th>
-            <th>Type</th>
-            <th>Version</th>
-            <th>Status</th>
-          </tr>
-        </thead>
-        <tbody>
-          {overview.sources.map((source) => (
-            <tr key={source.source_key}>
-              <td>{source.source_key}</td>
-              <td>{source.authority_tier}</td>
-              <td>{source.source_type}</td>
-              <td>{source.version_label}</td>
-              <td>{source.last_status ?? "unknown"}</td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
-    );
-  }
-  if (name === "Runs") {
-    if (!overview.run) {
-      return <p>No pipeline run is stored.</p>;
-    }
-    return (
-      <p>
-        Status {overview.run.status}. Fetched {overview.run.fetched_count}. Created{" "}
-        {overview.run.created_count}. Unchanged {overview.run.unchanged_count}. Rejected{" "}
-        {overview.run.rejected_count}. Parser {overview.run.parser_version}.
-      </p>
-    );
-  }
-  if (name === "Knowledge") {
-    return (
-      <table>
-        <thead>
-          <tr>
-            <th>From</th>
-            <th>Relation</th>
-            <th>To</th>
-            <th>State</th>
-          </tr>
-        </thead>
-        <tbody>
-          {overview.relations.map((relation) => (
-            <tr key={`${relation.from_native_id}-${relation.relation_type}-${relation.to_native_id}`}>
-              <td>{relation.from_native_id}</td>
-              <td>{relation.relation_type}</td>
-              <td>{relation.to_native_id}</td>
-              <td>{relation.review_state}</td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
-    );
-  }
-  if (name === "Primitives") {
-    return (
-      <table>
-        <thead>
-          <tr>
-            <th>Primitive</th>
-            <th>Outcome</th>
-            <th>Actions</th>
-            <th>ATT&CK</th>
-          </tr>
-        </thead>
-        <tbody>
-          {overview.primitives.map((primitive) => (
-            <tr key={primitive.primitive_key}>
-              <td>{primitive.primitive_key}</td>
-              <td>{primitive.outcome_category}</td>
-              <td>{primitive.required_actions.join(", ")}</td>
-              <td>{primitive.attack_mapping_state}</td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
-    );
-  }
-  if (name === "Candidates") {
-    if (overview.candidates.length === 0) {
-      return <p>No candidates have been compiled.</p>;
-    }
-    return (
-      <ul>
-        {overview.candidates.map((candidate) => (
-          <li key={candidate.version_id}>
-            <button type="button" onClick={() => onOpen(candidate.version_id)}>
-              {candidate.rule_id}
-            </button>
-            <span> {candidate.lifecycle}</span>
-            <span> {candidate.channel}</span>
-          </li>
-        ))}
-      </ul>
-    );
-  }
-  if (name === "Rule") {
-    if (!rule) {
-      return <p>Select a candidate.</p>;
-    }
-    return (
-      <section>
-        <h2>{rule.rule_id}</h2>
-        <p>Lifecycle {rule.lifecycle}.</p>
-        <p className="muted">{rule.semantic_hash}</p>
-        <ul>
-          {rule.validations.map((item) => (
-            <li key={item.validator_name}>
-              {item.validator_name}: {item.result}
-            </li>
-          ))}
-        </ul>
-        <p>
-          AI {rule.ai_verification?.provider ?? "none"}/{rule.ai_verification?.model ?? "none"}:{" "}
-          {rule.ai_verification?.verdict ?? "absent"}
-        </p>
-        <p>Channel {rule.publication?.channel ?? "unpublished"}.</p>
-        <ul>
-          {rule.scenarios.map((scenario) => (
-            <li key={scenario.scenario_id}>
-              {scenario.scenario_id}: {scenario.expect} {scenario.result}
-            </li>
-          ))}
-        </ul>
-      </section>
-    );
-  }
-  if (name === "Evaluation") {
-    return <p>Corpus results are on the rule detail. This slice measures one credential family.</p>;
-  }
-  return (
-    <section>
-      <h2>Overview</h2>
-      <p>
-        {overview.sources.length} sources. {overview.primitives.length} primitives. Candidates{" "}
-        {overview.candidates.length}.
-      </p>
-      <p>{overview.primitives.map((item) => item.primitive_key).join(", ")}</p>
-      {overview.candidates.map((candidate) => (
-        <p key={candidate.version_id}>
-          <button type="button" onClick={() => onOpen(candidate.version_id)}>
-            {candidate.rule_id}
-          </button>
-        </p>
-      ))}
-    </section>
   );
 }

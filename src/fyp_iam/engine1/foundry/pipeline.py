@@ -67,6 +67,19 @@ def present(
         }
         for item in snapshot.sources
     ]
+    sources.extend(
+        {
+            "source_key": item.source_key,
+            "authority_tier": item.authority_tier,
+            "source_type": item.source_type,
+            "official_url": item.official_url,
+            "version_label": item.version_label,
+            "enabled": False,
+            "content_hash": "",
+            "last_status": "disabled",
+        }
+        for item in snapshot.disabled_sources
+    )
     for failure in snapshot.failures:
         sources.append(
             {
@@ -102,6 +115,7 @@ def present(
         "relations": relations,
         "candidate": candidate,
         "validations": compiled["validations"],
+        "quality_report": compiled["quality_report"],
         "ai_verification": compiled["ai_verification"],
         "suggestions": compiled["suggestions"],
         "publication": compiled["publication"],

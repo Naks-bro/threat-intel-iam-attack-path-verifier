@@ -44,12 +44,12 @@ def test_sqlite_is_not_a_workbench_store() -> None:
 
 def test_missing_database_does_not_pretend_to_save() -> None:
     status, detail = database_status(None)
-    assert status == "unavailable"
+    assert status == "not_configured"
     assert detail == "not_configured"
     client = TestClient(create_app(database_url=None))
     health = client.get("/health")
     assert health.status_code == 200
-    assert health.json()["database"] == "unavailable"
+    assert health.json()["database"] == "not_configured"
     assert health.json()["database_detail"] == "not_configured"
     preview = client.get("/v1/workbench/fixtures/attack-t1548-assume-chain")
     assert preview.status_code == 200

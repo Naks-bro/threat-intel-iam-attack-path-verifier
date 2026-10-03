@@ -147,11 +147,22 @@ def assemble_snapshot() -> Snapshot:
     )
     return Snapshot(
         sources=sources,
-        failures=(probe_threat_technique_catalog(),),
+        failures=(),
         entities=tuple(entities),
         claims=tuple(claims),
         relations=tuple(relations),
         payloads=dict(pins.payloads),
+        disabled_sources=(
+            SourceDraft(
+                source_key="aws-threat-technique-catalog",
+                authority_tier=1,
+                source_type="threat_catalog",
+                official_url=str(json.loads(_PIN.read_text(encoding="utf-8"))["url"]),
+                version_label="not_ingested",
+                content_hash="",
+                enabled=False,
+            ),
+        ),
     )
 
 

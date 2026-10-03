@@ -1,15 +1,25 @@
 """Foundry mapping and pinned-slice tests. They do not open a network connection."""
 
+import json
+import logging
+from dataclasses import replace
+
+import pytest
 from fastapi.testclient import TestClient
 
+import fyp_iam.api.app as api_app
 from fyp_iam.api.app import create_app
+from fyp_iam.engine1.foundry.adapters import assemble_snapshot
+from fyp_iam.engine1.foundry.compiler import FailureDraft, compile_snapshot
 from fyp_iam.engine1.foundry.pins import TechniquePin
 from fyp_iam.engine1.foundry.pipeline import (
     build_foundry,
     fake_verify,
     mapping_decision,
+    present,
     rules_for_engine3,
 )
+from fyp_iam.engine1.foundry.store import FoundryRunInProgress
 
 
 def test_t1548_is_rejected() -> None:
@@ -68,6 +78,14 @@ def test_pinned_slice_publishes_one_experimental_rule() -> None:
     first = build_foundry(persisted=False, storage="not_written")
     second = build_foundry(persisted=False, storage="not_written")
     assert first["run"] == second["run"]
+    assert first["run"]["status"] == "succeeded"
+    catalog = next(
+        source
+        for source in first["sources"]
+        if source["source_key"] == "aws-threat-technique-catalog"
+    )
+    assert catalog["enabled"] is False
+    assert catalog["last_status"] == "disabled"
     publication = first["publication"]
     assert isinstance(publication, dict)
     assert publication["channel"] == "experimental"
@@ -87,17 +105,159 @@ def test_pinned_slice_publishes_one_experimental_rule() -> None:
     assert "attack-t1548-assume-chain" not in str(candidate["rule_id"])
 
 
+def test_enabled_source_failure_makes_run_partial() -> None:
+    snapshot = assemble_snapshot()
+    failed_source = snapshot.sources[0]
+    degraded = replace(
+        snapshot,
+        sources=snapshot.sources[1:],
+        failures=(
+            FailureDraft(
+                source_key=failed_source.source_key,
+                authority_tier=failed_source.authority_tier,
+                source_type=failed_source.source_type,
+                official_url=failed_source.official_url,
+                error={"reason": "fixture_source_failure"},
+            ),
+        ),
+    )
+    overview = present(
+        degraded,
+        compile_snapshot(degraded),
+        persisted=False,
+        storage="not_written",
+    )
+    assert overview["run"]["status"] == "partial"
+    assert any(source["last_status"] == "failed" for source in overview["sources"])
+
+
 def test_overview_without_a_database_is_empty() -> None:
     client = TestClient(create_app(database_url=None))
     overview = client.get("/v1/foundry/overview")
     assert overview.status_code == 200
     body = overview.json()
+    assert body["schema_version"] == "0.1"
     assert body["registry"] == "unavailable"
     assert body["candidates"] == []
     assert "attack-t1548-assume-chain" not in overview.text
     saved = client.post("/v1/foundry/runs")
     assert saved.status_code == 503
     assert saved.json()["detail"] == "database_unavailable"
+
+
+def test_foundry_contract_is_documented_and_requests_are_correlated() -> None:
+    client = TestClient(create_app(database_url=None))
+
+    response = client.get("/v1/foundry/overview", headers={"X-Request-ID": "demo-request-01"})
+
+    assert response.status_code == 200
+    assert response.headers["X-Request-ID"] == "demo-request-01"
+    openapi = client.get("/openapi.json").json()
+    overview_operation = openapi["paths"]["/v1/foundry/overview"]["get"]
+    assert overview_operation["responses"]["200"]["content"]["application/json"]["schema"][
+        "$ref"
+    ].endswith("FoundryOverviewResponse")
+
+
+def test_rule_dossier_exposes_scenario_classes_and_observed_verdicts(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    offline = build_foundry(persisted=False, storage="not_written")
+    candidate = offline["candidate"]
+    assert isinstance(candidate, dict)
+    scenario_run = next(
+        item for item in offline["validations"] if item["validator_name"] == "scenario_corpus"
+    )
+    monkeypatch.setattr(
+        api_app,
+        "read_rule",
+        lambda _url, _version: {
+            "rule_id": candidate["rule_id"],
+            "version_id": candidate["version_id"],
+            "semantic_hash": candidate["semantic_hash"],
+            "lifecycle": "experimental",
+            "rule": candidate["rule"],
+            "validations": [],
+            "ai_verification": {"provider": "fake", "model": "schema-only", "verdict": "pass"},
+            "publication": {"channel": "experimental"},
+            "scenarios": scenario_run["findings"],
+        },
+    )
+    client = TestClient(
+        create_app(database_url="postgresql+psycopg://postgres:test@127.0.0.1:5432/postgres")
+    )
+    response = client.get(f"/v1/foundry/rules/{candidate['version_id']}")
+    assert response.status_code == 200
+    cases = response.json()["scenarios"]
+    assert len(cases) == 6
+    assert any(
+        case["case_class"] == "missing_context" and case["actual"] == "inconclusive"
+        for case in cases
+    )
+
+
+def test_rejected_foundry_run_emits_correlated_operational_event(
+    caplog: pytest.LogCaptureFixture,
+) -> None:
+    client = TestClient(create_app(database_url=None))
+    caplog.set_level(logging.INFO, logger="uvicorn.error.fyp_iam")
+
+    response = client.post("/v1/foundry/runs", headers={"X-Request-ID": "run-request-01"})
+
+    assert response.status_code == 503
+    assert response.headers["X-Request-ID"] == "run-request-01"
+    assert response.headers["Server-Timing"].startswith("app;dur=")
+    events = [json.loads(record.message) for record in caplog.records]
+    assert {
+        "event": "foundry_pipeline_rejected",
+        "reason": "database_unavailable",
+        "request_id": "run-request-01",
+    } in events
+    completed = next(event for event in events if event["event"] == "http_request_completed")
+    assert completed["request_id"] == "run-request-01"
+    assert completed["status_code"] == 503
+
+
+def test_concurrent_foundry_run_is_reported_as_conflict(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    def busy(_url: str) -> None:
+        raise FoundryRunInProgress
+
+    monkeypatch.setattr(api_app, "persist_foundry", busy)
+    client = TestClient(
+        create_app(database_url="postgresql+psycopg://postgres:test@127.0.0.1:5432/postgres")
+    )
+    response = client.post("/v1/foundry/runs")
+    assert response.status_code == 409
+    assert response.json()["detail"] == "foundry_run_in_progress"
+
+
+def test_registry_read_is_not_blocked_by_a_concurrent_health_probe(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    registry = {
+        "schema_version": "0.1",
+        "database": "ok",
+        "database_detail": "reachable",
+        "storage": "not_written",
+        "registry": "empty",
+        "sources": [],
+        "run": None,
+        "primitives": [],
+        "relations": [],
+        "candidates": [],
+    }
+    monkeypatch.setattr(api_app, "database_status", lambda _url: ("connecting", "in_progress"))
+    monkeypatch.setattr(api_app, "read_registry", lambda _url: registry)
+    client = TestClient(
+        create_app(database_url="postgresql+psycopg://postgres:test@127.0.0.1:5432/postgres")
+    )
+
+    response = client.get("/v1/foundry/overview")
+
+    assert response.status_code == 200
+    assert response.json()["registry"] == "empty"
 
 
 def test_compiler_reads_relations_instead_of_a_pinned_behavior_id() -> None:

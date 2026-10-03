@@ -7,13 +7,14 @@ import json
 from datetime import UTC, datetime
 from uuid import uuid4
 
-from sqlalchemy import create_engine, select
+from sqlalchemy import create_engine, func, select
 from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.orm import Session
 
 from fyp_iam.core.ids import stable_id
 from fyp_iam.engine1.foundry.adapters import assemble_snapshot
 from fyp_iam.engine1.foundry.compiler import (
+    OPTIONAL_VALIDATOR_NAMES,
     EntityDraft,
     RelationDraft,
     Snapshot,
@@ -42,18 +43,30 @@ from fyp_iam.engine1.foundry.models import (
     ValidationRunRow,
 )
 from fyp_iam.engine1.foundry.pipeline import PARSER, present
+from fyp_iam.engine1.foundry.quality import QualityReport
+from fyp_iam.engine1.foundry.quality_store import read_latest_quality_report, write_quality_report
 from fyp_iam.engine1.workbench.errors import DatabaseUnavailable
 
 _NOW = datetime(2026, 10, 3, tzinfo=UTC)
+
+
+class FoundryRunInProgress(Exception):
+    """Another transaction already owns the foundry run lock."""
 
 
 def persist_foundry(url: str) -> dict[str, object]:
     if not url or url.startswith("sqlite"):
         raise DatabaseUnavailable("PostgreSQL is required for foundry persistence")
     snapshot = assemble_snapshot()
-    engine = create_engine(url, pool_pre_ping=True)
+    run_started = datetime.now(UTC)
+    engine = None
     try:
+        engine = create_engine(url, pool_pre_ping=True)
         with Session(engine) as session, session.begin():
+            # PostgreSQL 17 transaction advisory locks release automatically at commit/rollback.
+            # Source: https://www.postgresql.org/docs/17/functions-admin.html#FUNCTIONS-ADVISORY-LOCKS
+            if not session.scalar(select(func.pg_try_advisory_xact_lock(349812, 1))):
+                raise FoundryRunInProgress
             version_ids = {
                 item.source_key: stable_id("sver", item.source_key, item.content_hash)
                 for item in snapshot.sources
@@ -63,6 +76,7 @@ def persist_foundry(url: str) -> dict[str, object]:
                 for version_id in version_ids.values()
             )
             _ensure_sources(session, snapshot)
+            _ensure_disabled_sources(session, snapshot)
             _ensure_failures(session, snapshot)
             preview = compile_snapshot(snapshot)
             overview = present(snapshot, preview, persisted=True, storage="postgres")
@@ -78,8 +92,8 @@ def persist_foundry(url: str) -> dict[str, object]:
                     attempt=1,
                     trigger="manual",
                     parent_run_id=None,
-                    started_at=_NOW,
-                    finished_at=_NOW,
+                    started_at=run_started,
+                    finished_at=run_started,
                     fetched_count=_int(run["fetched_count"]),
                     created_count=_int(run["created_count"]),
                     updated_count=0,
@@ -90,8 +104,8 @@ def persist_foundry(url: str) -> dict[str, object]:
                 )
             )
             session.flush()
-            _ingest(session, pipeline_id, version_ids, already)
-            _ingest_failures(session, pipeline_id, snapshot)
+            _ingest(session, pipeline_id, version_ids, already, run_started)
+            _ingest_failures(session, pipeline_id, snapshot, run_started)
             if not already:
                 _write_graph(session, pipeline_id, version_ids, snapshot)
             session.flush()
@@ -104,6 +118,14 @@ def persist_foundry(url: str) -> dict[str, object]:
                 run["unchanged_count"] = len(snapshot.sources)
             if not already:
                 _write_compiled(session, overview)
+            _write_validations(session, overview, run_started)
+            session.flush()
+            write_quality_report(
+                session,
+                QualityReport.model_validate(overview["quality_report"]),
+                pipeline_id,
+                run_started,
+            )
             session.add(
                 AuditEventRow(
                     event_id=stable_id("audit", pipeline_id, "pipeline_completed"),
@@ -120,12 +142,14 @@ def persist_foundry(url: str) -> dict[str, object]:
             )
         overview["run"] = run
         return overview
-    except DatabaseUnavailable:
+    except (DatabaseUnavailable, FoundryRunInProgress):
         raise
-    except Exception as exc:
-        raise DatabaseUnavailable("PostgreSQL did not commit the foundry run") from exc
+    except Exception:
+        # Driver errors can contain connection parameters. Keep the public exception safe.
+        raise DatabaseUnavailable("PostgreSQL did not commit the foundry run") from None
     finally:
-        engine.dispose()
+        if engine is not None:
+            engine.dispose()
 
 
 def read_registry(url: str) -> dict[str, object]:
@@ -140,7 +164,7 @@ def read_registry(url: str) -> dict[str, object]:
                 return _registry_shell("ok", "reachable", "empty")
             version_by_source = {row.source_id: row for row in versions}
             latest_ingestion: dict[str, IngestionRunRow] = {}
-            for row in sorted(ingestions, key=lambda item: item.ingestion_id):
+            for row in sorted(ingestions, key=lambda item: (item.started_at, item.ingestion_id)):
                 latest_ingestion[row.source_id] = row
             source_views = []
             for source in sources:
@@ -153,10 +177,16 @@ def read_registry(url: str) -> dict[str, object]:
                         "source_type": source.source_type,
                         "version_label": version.version_label if version else "unavailable",
                         "enabled": source.enabled,
-                        "last_status": ingestion.status if ingestion else "queued",
+                        "last_status": (
+                            "disabled"
+                            if not source.enabled
+                            else ingestion.status
+                            if ingestion
+                            else "queued"
+                        ),
                     }
                 )
-            latest = max(runs, key=lambda item: item.run_id) if runs else None
+            latest = max(runs, key=lambda item: (item.started_at, item.run_id)) if runs else None
             entities = session.scalars(select(NormalizedEntityRow)).all()
             native_by_id = {row.entity_id: row.native_id for row in entities}
             relations = [
@@ -232,6 +262,9 @@ def read_rule(url: str, version_id: str) -> dict[str, object] | None:
             validations = session.scalars(
                 select(ValidationRunRow).where(ValidationRunRow.rule_version_id == version_id)
             ).all()
+            latest_validations: dict[str, ValidationRunRow] = {}
+            for item in sorted(validations, key=lambda row: (row.executed_at, row.validation_id)):
+                latest_validations[item.validator_name] = item
             ai = session.scalar(
                 select(AIVerificationRow).where(AIVerificationRow.rule_version_id == version_id)
             )
@@ -239,12 +272,16 @@ def read_rule(url: str, version_id: str) -> dict[str, object] | None:
                 select(PublicationRow).where(PublicationRow.rule_version_id == version_id)
             )
             scenarios: list[object] = []
-            for item in validations:
+            for item in latest_validations.values():
                 if item.validator_name == "scenario_corpus":
                     parsed = json.loads(item.findings_json)
                     if isinstance(parsed, list):
                         scenarios = parsed
             rule = json.loads(version.rule_json)
+            try:
+                quality = read_latest_quality_report(session, version)
+            except ValueError:
+                raise DatabaseUnavailable("Stored quality report could not be verified") from None
             return {
                 "rule_id": rule["rule_id"] if isinstance(rule, dict) else version.version_id,
                 "version_id": version.version_id,
@@ -252,8 +289,17 @@ def read_rule(url: str, version_id: str) -> dict[str, object] | None:
                 "lifecycle": candidate.lifecycle if candidate else "generated",
                 "rule": rule,
                 "validations": [
-                    {"validator_name": item.validator_name, "result": item.result}
-                    for item in validations
+                    {
+                        "validator_name": item.validator_name,
+                        "result": item.result,
+                        "optional": item.validator_name in OPTIONAL_VALIDATOR_NAMES,
+                        "findings": [
+                            finding
+                            for finding in json.loads(item.findings_json)
+                            if isinstance(finding, str)
+                        ],
+                    }
+                    for item in latest_validations.values()
                 ],
                 "ai_verification": None
                 if ai is None
@@ -264,6 +310,7 @@ def read_rule(url: str, version_id: str) -> dict[str, object] | None:
                 },
                 "publication": None if publication is None else {"channel": publication.channel},
                 "scenarios": scenarios,
+                "quality_report": quality.model_dump(mode="json") if quality else None,
             }
     finally:
         engine.dispose()
@@ -271,6 +318,7 @@ def read_rule(url: str, version_id: str) -> dict[str, object] | None:
 
 def _registry_shell(database: str, detail: str, registry: str) -> dict[str, object]:
     return {
+        "schema_version": "0.1",
         "database": database,
         "database_detail": detail,
         "storage": "postgres" if database == "ok" and registry != "empty" else "not_written",
@@ -326,6 +374,27 @@ def _ensure_sources(session: Session, snapshot: Snapshot) -> None:
     session.flush()
 
 
+def _ensure_disabled_sources(session: Session, snapshot: Snapshot) -> None:
+    for item in snapshot.disabled_sources:
+        session.execute(
+            insert(SourceRow)
+            .values(
+                source_id=stable_id("source", item.source_key),
+                source_key=item.source_key,
+                authority_tier=item.authority_tier,
+                source_type=item.source_type,
+                official_url=item.official_url,
+                enabled=False,
+                schedule_cron=None,
+            )
+            .on_conflict_do_update(
+                index_elements=["source_key"],
+                set_={"enabled": False},
+            )
+        )
+    session.flush()
+
+
 def _ensure_failures(session: Session, snapshot: Snapshot) -> None:
     for item in snapshot.failures:
         session.execute(
@@ -344,7 +413,9 @@ def _ensure_failures(session: Session, snapshot: Snapshot) -> None:
     session.flush()
 
 
-def _ingest_failures(session: Session, pipeline_id: str, snapshot: Snapshot) -> None:
+def _ingest_failures(
+    session: Session, pipeline_id: str, snapshot: Snapshot, run_started: datetime
+) -> None:
     for item in snapshot.failures:
         session.add(
             IngestionRunRow(
@@ -354,8 +425,8 @@ def _ingest_failures(session: Session, pipeline_id: str, snapshot: Snapshot) -> 
                 source_version_id=None,
                 attempt=1,
                 status="failed",
-                started_at=_NOW,
-                finished_at=_NOW,
+                started_at=run_started,
+                finished_at=run_started,
                 fetched_count=0,
                 created_count=0,
                 updated_count=0,
@@ -374,6 +445,7 @@ def _ingest(
     pipeline_id: str,
     version_ids: dict[str, str],
     already: bool,
+    run_started: datetime,
 ) -> None:
     for key, version_id in version_ids.items():
         source_id = stable_id("source", key)
@@ -385,8 +457,8 @@ def _ingest(
                 source_version_id=version_id,
                 attempt=1,
                 status="succeeded",
-                started_at=_NOW,
-                finished_at=_NOW,
+                started_at=run_started,
+                finished_at=run_started,
                 fetched_count=1,
                 created_count=0 if already else 1,
                 updated_count=0,
@@ -629,20 +701,6 @@ def _candidate(
         )
     )
     session.flush()
-    for index, item in enumerate(_object_list(overview["validations"])):
-        session.add(
-            ValidationRunRow(
-                validation_id=stable_id("validation", version_id, _text(item["validator_name"])),
-                rule_version_id=version_id,
-                validator_name=_text(item["validator_name"]),
-                validator_version=_text(item["validator_version"]),
-                result=_text(item["result"]),
-                findings_json=json.dumps(item.get("findings", [])),
-                corpus_version=_text(item["corpus_version"]),
-                executed_at=_NOW,
-                duration_ms=index,
-            )
-        )
     ai = _object(overview["ai_verification"])
     verification_id = stable_id("aiverify", version_id, _text(ai["response_hash"]))
     session.add(
@@ -684,6 +742,41 @@ def _candidate(
                 channel="experimental",
                 published_at=_NOW,
             )
+        )
+
+
+def _write_validations(
+    session: Session, overview: dict[str, object], executed_at: datetime
+) -> None:
+    candidate = overview.get("candidate")
+    if not isinstance(candidate, dict):
+        return
+    version_id = _text(candidate["version_id"])
+    for item in _object_list(overview["validations"]):
+        findings_json = json.dumps(item.get("findings", []), sort_keys=True)
+        validation_id = stable_id(
+            "validation",
+            version_id,
+            _text(item["validator_name"]),
+            _text(item["validator_version"]),
+            _text(item["corpus_version"]),
+            _text(item["result"]),
+            findings_json,
+        )
+        session.execute(
+            insert(ValidationRunRow)
+            .values(
+                validation_id=validation_id,
+                rule_version_id=version_id,
+                validator_name=_text(item["validator_name"]),
+                validator_version=_text(item["validator_version"]),
+                result=_text(item["result"]),
+                findings_json=findings_json,
+                corpus_version=_text(item["corpus_version"]),
+                executed_at=executed_at,
+                duration_ms=None,
+            )
+            .on_conflict_do_nothing(index_elements=["validation_id"])
         )
 
 

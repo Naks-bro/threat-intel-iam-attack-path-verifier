@@ -7,8 +7,10 @@ from sqlalchemy import (
     CheckConstraint,
     DateTime,
     ForeignKey,
+    Index,
     Integer,
     LargeBinary,
+    MetaData,
     String,
     Text,
     UniqueConstraint,
@@ -19,7 +21,9 @@ _STATUS = "status in ('queued','running','succeeded','partial','failed','cancell
 
 
 class Base(DeclarativeBase):
-    pass
+    """Foundry tables live in the non-exposed ``foundry`` schema."""
+
+    metadata = MetaData(schema="foundry")
 
 
 class SourceRow(Base):
@@ -308,7 +312,46 @@ class ValidationRunRow(Base):
     findings_json: Mapped[str] = mapped_column(Text)
     corpus_version: Mapped[str] = mapped_column(String(64))
     executed_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
-    duration_ms: Mapped[int] = mapped_column(Integer)
+    duration_ms: Mapped[int | None] = mapped_column(Integer, nullable=True)
+
+
+class QualityReportRow(Base):
+    """Immutable semantic artifact; measurement times belong to observations."""
+
+    __tablename__ = "quality_reports"
+    __table_args__ = (
+        UniqueConstraint("rule_version_id", "report_hash", name="uq_quality_version_hash"),
+        CheckConstraint(
+            "status in ('pass','fail','needs_review','incomplete')", name="ck_quality_status"
+        ),
+    )
+
+    report_id: Mapped[str] = mapped_column(String(80), primary_key=True)
+    rule_version_id: Mapped[str] = mapped_column(ForeignKey("rule_versions.version_id"))
+    report_hash: Mapped[str] = mapped_column(String(80))
+    rule_semantic_hash: Mapped[str] = mapped_column(String(80))
+    evidence_snapshot_hash: Mapped[str] = mapped_column(String(80))
+    report_version: Mapped[str] = mapped_column(String(64))
+    status: Mapped[str] = mapped_column(String(16))
+    report_json: Mapped[str] = mapped_column(Text)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
+
+
+class QualityObservationRow(Base):
+    """One report observed in one run; repeated identical writes are idempotent."""
+
+    __tablename__ = "quality_observations"
+    __table_args__ = (
+        UniqueConstraint("pipeline_run_id", "report_id", name="uq_quality_run_report"),
+        Index("ix_quality_latest", "rule_version_id", "observed_at", "observation_id"),
+    )
+
+    observation_id: Mapped[str] = mapped_column(String(80), primary_key=True)
+    report_id: Mapped[str] = mapped_column(ForeignKey("quality_reports.report_id"))
+    rule_version_id: Mapped[str] = mapped_column(ForeignKey("rule_versions.version_id"))
+    pipeline_run_id: Mapped[str] = mapped_column(ForeignKey("pipeline_runs.run_id"))
+    observed_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
+    report_json: Mapped[str] = mapped_column(Text)
 
 
 class AIVerificationRow(Base):
