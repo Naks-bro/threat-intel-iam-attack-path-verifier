@@ -1,0 +1,12 @@
+---
+description: Keep recoverable project knowledge on GitHub and keep secrets off Git.
+alwaysApply: true
+---
+
+GitHub is the source of truth for this repository. Work that exists only on one laptop is not preserved.
+
+- Commit and push finished non-secret slices to `engine1-curation-workbench`.
+- Do not commit `.env`, `certs/`, `.supabase/`, private keys, passwords, API keys, AWS credentials, or `frontend/test-results/`.
+- Do not deploy, create cloud infrastructure, or change AWS resources unless the maintainer explicitly asks.
+- Record architecture, setup, recovery, and configuration facts in `docs/`, not only in chat.
+- `docs/ARCHITECTURE.md` is an index. The authoritative architecture text is `docs/02_ARCHITECTURE.md` and `docs/17_ENGINE_1_ARCHITECTURE.md`.

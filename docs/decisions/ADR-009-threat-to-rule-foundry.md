@@ -2,7 +2,9 @@
 
 ## Status
 
-Proposed. This supersedes the product direction in ADR-008. The first pinned source-to-experimental-rule slice is in this checkout. The compiler reads stored entities and relations. The portal reads the registry and does not request a hardcoded artifact id. It does not implement the remaining rule families, optional third-party validators, a scheduler, stable publication, or a human-labeled benchmark beyond the three-scenario corpus. No non-ephemeral PostgreSQL database was found on this machine, so the checkpoint schema is replaced without a data migration. Local PostgreSQL has not been run.
+Proposed. This supersedes the product direction in ADR-008. The first pinned source-to-experimental-rule slice is in this checkout. The compiler reads stored entities and relations. The portal reads the registry and does not request a hardcoded artifact id. It does not implement the remaining rule families, optional third-party validators, a scheduler, stable publication, or an independently labeled benchmark. The local checkpoint schema was replaced without a data migration. Supabase hosted the earlier foundry slice; this worktree's update has not been verified against managed PostgreSQL.
+
+Implementation note (2026-10-03): the current worktree adds a closed ontology for the credential family and expands its project-curated corpus to six cases. The AWS catalog is now registered as disabled until a stable versioned input is available; its earlier failed probe remains historical evidence. These implementation changes do not accept this Proposed ADR or complete the other two rule families. Managed PostgreSQL verification of this update is still pending.
 
 ## Date
 
@@ -43,6 +45,8 @@ On 2026-10-03 the HTML catalog was reachable at `https://aws-samples.github.io/t
 ## Decision
 
 Build the foundry on the model below. PostgreSQL remains the store. SQLite stays rejected. One worker process runs the pipeline. Celery is not introduced.
+
+Supabase may host that PostgreSQL database for local development and the demonstration. It is an optional managed deployment, not a product dependency. The domain and repository layers stay on SQLAlchemy, Psycopg, and Alembic and do not import a Supabase client. Application traffic uses `FYP_DATABASE_URL`. Alembic uses `FYP_MIGRATION_DATABASE_URL` when migrations need a different endpoint. When both a direct URL and a session-pooler URL are configured, the API prefers the direct host if IPv6 can reach it, and otherwise the session pooler on port 5432. Transaction-pooler port 6543 is rejected. Managed hosts require `sslmode=require`, or `verify-full` when `FYP_DATABASE_SSLROOTCERT` points at a CA file. GitHub Actions keeps its own PostgreSQL service and does not use Supabase credentials. The React app talks only to FastAPI. Supabase Auth, Storage, Realtime, and Edge Functions are not used. Foundry tables live in the `foundry` schema, which is not granted to the `anon` or `authenticated` roles.
 
 OWASP, NVD, and CISA KEV stay in a contextual lane. They do not create IAM rules from keyword overlap. Zero contextual relations is an acceptable result.
 

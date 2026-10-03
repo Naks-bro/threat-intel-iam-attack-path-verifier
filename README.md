@@ -2,6 +2,28 @@
 
 This repository is the implementation checkout for the final-year project. It currently contains one local vertical slice:
 
+Engine 1 also has an experimental evidence foundry in `src/fyp_iam/engine1/foundry/` and a React control plane in `frontend/`. It ingests three pinned extracts (MITRE ATT&CK, AWS Service Authorization Reference, and redacted Stratus metadata), derives three attack primitives, and compiles one additional-credentials candidate. The candidate remains experimental. The AWS Threat Technique Catalog entry is disabled until a stable versioned input exists. The foundry has a closed vocabulary for the first rule family and a six-case pinned scenario corpus; the other two planned rule families, a real AI critic, and stable publication remain open. See `docs/14_ENGINE_1_RESEARCH_GRADE_FOUNDRY_SPEC.md` and `docs/00_STATUS_AND_TRUTH_MODEL.md` for the boundary between the current code and planned work.
+
+An opt-in verifier result must bind to the exact candidate version and evidence snapshot and cite known evidence IDs. Malformed or unbound results move to `needs_review` and cannot publish experimentally. No external model provider is configured or called in ordinary runs.
+
+The foundry command can preview the deterministic result without a database: `python -m fyp_iam.engine1.foundry.runner preview`. With a private `FYP_DATABASE_URL`, `python -m fyp_iam.engine1.foundry.runner run` persists one bounded run. A transaction lock rejects overlapping runs. External scheduling can invoke the `run` command; no always-on scheduler is installed by this checkout. The command prints only a small status summary, not source payloads or connection strings.
+
+To preview the Engine 1 GUI without a database, run these in separate terminals from the repository root:
+
+```powershell
+.\.venv\Scripts\python.exe -m uvicorn fyp_iam.api.preview_app:app --host 127.0.0.1 --port 8765
+cd frontend
+npm run dev -- --host 127.0.0.1 --port 5173
+```
+
+Open `http://127.0.0.1:5173/`. This explicit preview entry point ignores `FYP_DATABASE_URL`, uses only checked-in pinned evidence, and never stores a run or publishes a rule. The “Recompute preview” button recalculates in memory. The normal API entry point still requires a configured PostgreSQL database for foundry runs.
+
+The portal now has seven URL-addressable workspaces: Overview, Pipeline, Source intelligence, Attack primitives, Evidence map, Rule registry, and Architecture. Open `http://127.0.0.1:5173/#/architecture` for the implementation-status diagram. The [architecture and page map](docs/17_ENGINE_1_ARCHITECTURE.md) records which capabilities are implemented, partial, or planned; navigation improvements do not imply production readiness.
+
+The candidate dossier separates required deterministic checks from optional external tools. Each result shows its status and any textual finding; scenario outcomes appear separately. In the pinned preview, ten required checks pass, while four optional tools are unavailable because they are not installed. Neither the unavailable tools nor the schema-only fake verifier should be described as independent validation or a live AI review.
+
+The preview also exposes a [version-bound quality report](docs/18_RULE_QUALITY_REPORT.md), with an integrity hash, validator/corpus versions, explicit missing checks, and nullable timings. Frontend types and its test fixture are generated from the backend contract. Historical database rows do not yet have persisted reports; the UI labels those reports unavailable. A passing deterministic report is not human approval or stable publication.
+
 ```text
 pinned local technique
   -> proposed rule
@@ -20,6 +42,8 @@ Engine 2 can also build an `IAMGraphSnapshot` from synthetic identity and trust 
 
 Raw ChatGPT exports are not part of this repository. Curated project documents live in `docs/`. Labels in those documents still mean what `docs/00_STATUS_AND_TRUTH_MODEL.md` says: **Verified**, **Accepted decision**, **Proposed**, **Reported/unverified**, and **Rejected/corrected**.
 
+Coding agents should start with [AGENTS.md](AGENTS.md). The optional [ECC skill map](docs/16_ECC_SKILL_WORKFLOW.md) lists the project-local Cursor skills and how to use them without overriding this project's evidence and approval boundaries; the full native Codex plugin is a separate per-user installation.
+
 ## What this slice does
 
 - Validates Proposed v0.1 models for `ApprovedRule`, `IAMGraphSnapshot`, `AttackPath`, `VerificationResult`, and `Finding`.
@@ -37,7 +61,7 @@ Raw ChatGPT exports are not part of this repository. Curated project documents l
 
 - Engine 2 live AWS collection or Neo4j persistence. A twelve-action read-only policy template is tested and not attached.
 - IAM policy-document evaluation, including condition-key logic. A condition value of `"true"` is not treated as satisfied unless fixture context says so.
-- A multi-source CTI parser, a live ATT&CK download, or an LLM rule writer. Engine 1 currently pins one local technique file.
+- A general-purpose CTI parser, a live ATT&CK download, or an LLM rule writer. The legacy intake path pins one local technique; the separate foundry uses the three pinned extracts described above.
 - Policy simulation, CloudGoat, remediation, or any AWS write.
 
 Contract additions used by the slice are **Proposed** and recorded in [ADR-004](docs/decisions/ADR-004-local-fixture-vertical-slice.md) and [ADR-005](docs/decisions/ADR-005-local-cti-intake.md). ADRs 001-003 remain **Proposed** for team acceptance.
@@ -83,14 +107,18 @@ The checked-in fixtures are the six cases `positive`, `hard_negative`, `explicit
 
 ## Workbench persistence
 
-PostgreSQL is the workbench store. This checkout does not start it locally.
+PostgreSQL is the workbench store. SQLAlchemy, Psycopg, and Alembic are the implementation. A managed host such as Supabase is optional and is not imported by the application. Copy `.env.example` to `.env` and set the variables there. Do not commit `.env`.
 
-- Set `FYP_DATABASE_URL` to a `postgresql+psycopg://` URL, then run `python -m alembic upgrade head`.
+- `FYP_DATABASE_URL` is the application URL. Use a direct host, or a session pooler on port 5432. Do not use port 6543.
+- `FYP_MIGRATION_DATABASE_URL` is optional. Alembic uses it when it is set.
+- `FYP_DATABASE_DIRECT_URL` and `FYP_DATABASE_SESSION_URL` are an optional pair. When both are set, the API prefers the direct URL if IPv6 can reach it, and otherwise the session URL.
+- `FYP_DATABASE_SSLROOTCERT` is an optional CA file. When it is set, connections use `sslmode=verify-full`.
+- Commands, from the repository root: `python -m fyp_iam.persistence check`, `python -m fyp_iam.persistence migrate`, `python -m fyp_iam.persistence seed`, and `python -m fyp_iam.persistence verify-restart`.
+- `GET /health` reports `database` as `not_configured`, `connecting`, `available`, `migration_required`, or `unavailable`. The detail is a short code. Connection strings are not returned.
+- With no database, `POST /v1/workbench/imports/{pin_id}` and `POST /v1/foundry/runs` return 503 `database_unavailable` and write nothing.
 - `compose.yaml` is for a machine with Docker. It reads `FYP_POSTGRES_PASSWORD` from the environment and does not contain a password.
-- With no database, `GET /health` reports `database=unavailable`. `POST /v1/workbench/imports/{pin_id}` returns 503 `database_unavailable` and writes nothing.
-- `GET /v1/workbench/fixtures/attack-t1548-assume-chain` is a read-only preview. `persisted` is false.
-- The React screen is `frontend/`. From that directory, `npm install` and `npm run dev` proxy the API on port 8765.
-- GitHub Actions job `postgres` migrates a service container and runs the tests marked `postgres`. Local `pytest` skips that mark when `FYP_DATABASE_URL` is unset.
+- The React screen is `frontend/`. It calls FastAPI. It does not open a database connection.
+- GitHub Actions job `postgres` migrates its own PostgreSQL service and runs the tests marked `postgres`. That job does not use a managed-host secret. Local `pytest` skips that mark when `FYP_DATABASE_URL` is unset.
 
 ## Safety
 
