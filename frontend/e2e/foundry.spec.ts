@@ -11,5 +11,7 @@ test("pipeline run shows the experimental credential rule", async ({ page }) => 
   await page.getByRole("button", { name: "rule_additional_cloud_credentials" }).click();
   await expect(page.getByText("Verifier harness")).toBeVisible();
   await expect(page.getByText(/Experimental isolation/)).toBeVisible();
-  await expect(page.locator("article").filter({ hasText: "Scenario corpus" })).toContainText("6/6");
+  await expect(
+    page.locator("article").filter({ hasText: "Scenario corpus" }).filter({ hasText: "6/6" }),
+  ).toBeVisible();
 });
