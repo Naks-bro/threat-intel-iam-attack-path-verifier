@@ -1,5 +1,7 @@
 # Engine 2 — AWS IAM Collection and Graph
 
+**Status:** synthetic normalizer implemented; live AWS collection, sealed inventory persistence, and real-account graph analysis are not implemented. The pipeline and acceptance criteria below describe the intended target unless a section says otherwise.
+
 ## Purpose
 
 Engine 2 takes a controlled AWS authorization environment and produces a validated, reproducible `IAMGraphSnapshot`. It does not decide that an account is vulnerable.
@@ -13,7 +15,7 @@ collection scope + read-only credentials
  -> normalized policy/principal/resource model
  -> authorization relationship resolver
  -> serializable graph snapshot
- -> Neo4j persistence/indexing
+ -> proposed PostgreSQL snapshot/graph persistence (not yet implemented)
  -> graph validation and coverage report
 ```
 
@@ -48,9 +50,9 @@ Do not claim “effective permissions” unless all policy layers required for t
 - Every snapshot is immutable and tied to a collection run.
 - Unknown/missing policy layers produce warnings and lower confidence; they do not default to allow.
 
-## Neo4j boundary
+## Persistence boundary — current direction
 
-Neo4j is the query/persistence implementation, not the only representation. Contract fixtures must be portable JSON so Engine 3 tests do not require a live database. Cypher is compiled from allowlisted rule predicates by trusted code, parameterized, and tested; it is never accepted directly from an LLM.
+The earlier Neo4j/Cypher plan is superseded by the proposed PostgreSQL-first schema in [the whole-product design](24_WHOLE_PRODUCT_SCHEMA_PROPOSAL.md). No Neo4j persistence or Cypher compiler exists in the current code. Contract fixtures remain portable JSON so Engine 3 tests do not require a live database. Four observed-graph/evidence tables are now locally drafted in unapplied 0011 and rehearsed on a disposable cluster; there is no graph writer or real-account resolver. The managed `foundry` schema remains at Alembic 0004 as rechecked on 2026-10-09.
 
 ## Validation
 
@@ -65,7 +67,7 @@ Neo4j is the query/persistence implementation, not the only representation. Cont
 ## Acceptance criteria
 
 - A deterministic fixture produces the expected portable graph.
-- Re-importing the snapshot into Neo4j preserves node/edge identity.
+- Re-importing a sealed snapshot into the future PostgreSQL graph tables preserves node/edge identity (proposed acceptance test; not implemented).
 - Engine 3 can discover the known positive path and reject known negatives.
 - Live collection succeeds using a documented read-only policy in a lab account.
 - Logs and exported fixtures contain no credentials or unnecessary account identifiers.
@@ -88,6 +90,11 @@ An exact trust principal `service:<name>.amazonaws.com` becomes one shared servi
 
 `collect_live_account` raises `LiveCollectionDisabled` and imports no AWS SDK.
 
+The separate operator-only `aws_preflight` command verifies a named profile and
+expected account before two bounded IAM list probes. It rejects root and wrong
+accounts and returns redacted status, never a graph or a complete-collection
+claim. No API route invokes it. See [connection safety](20_AWS_CONNECTION_SECURITY.md).
+
 ## Collector policy (defined, not attached)
 
 `docs/policies/iam-readonly-collector.json` lists twelve `iam:Get*` and `iam:List*` actions. `READ_ONLY_ACTIONS` in `src/fyp_iam/engine2/collector_policy.py` is the allowlist, and tests reject a write action, a simulator action, an account ID, or an ARN. `iam:GetRole` and `iam:GetUser` are the reads that would show a trust policy and a boundary attachment. The template does not grant group, SCP, RCP, session-policy, or resource-policy reads, and it is not attached to an account.
@@ -100,4 +107,3 @@ An exact trust principal `service:<name>.amazonaws.com` becomes one shared servi
 - Treating graph reachability as proof of action authorization.
 - Mutating the target account.
 - Making the graph schema expand automatically from generated text.
-

@@ -46,3 +46,39 @@ def test_concurrent_run_returns_conflict_without_url(
     monkeypatch.setattr(runner, "persist_foundry", busy)
     assert runner.main(["run"]) == 3
     assert json.loads(capsys.readouterr().out) == {"error": "foundry_run_in_progress"}
+
+
+def test_verify_preview_exercises_bound_request_without_database(
+    monkeypatch: pytest.MonkeyPatch,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    def forbidden() -> None:
+        pytest.fail("Verifier preview must not load database configuration")
+
+    monkeypatch.setattr(runner, "database_url_from_env", forbidden)
+    assert runner.main(["verify-preview"]) == 0
+    first = capsys.readouterr().out
+    summary = json.loads(first)
+    assert summary["persisted"] is False
+    assert summary["verifier"]["provider"] == "fake"
+    assert summary["verifier"]["verdict"] == "pass"
+    assert summary["verifier"]["request_hash"].startswith("sha256:")
+    assert "CreateAccessKey" not in first
+    assert "source_text" not in first
+    assert runner.main(["verify-preview"]) == 0
+    assert capsys.readouterr().out == first
+
+
+def test_verify_run_explicitly_selects_bound_persistence(monkeypatch, capsys):
+    monkeypatch.setattr(runner, "database_url_from_env", lambda: "private-url")
+    monkeypatch.setattr(runner, "prepare_url", lambda url: (url, None))
+    observed = []
+
+    def persist(url, *, verify_inputs=False):
+        observed.append((url, verify_inputs))
+        return runner.build_foundry(persisted=True, storage="postgres")
+
+    monkeypatch.setattr(runner, "persist_foundry", persist)
+    assert runner.main(["verify-run"]) == 0
+    assert observed == [("private-url", True)]
+    assert "private-url" not in capsys.readouterr().out

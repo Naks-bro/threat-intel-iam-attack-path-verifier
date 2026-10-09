@@ -1,7 +1,7 @@
 from fyp_iam.contracts.models import EdgeType, VerificationStatus
 from fyp_iam.engine3.pipeline import analyze
 from fyp_iam.engine3.verify import LOCAL_LIMITATION
-from fyp_iam.fixtures.cases import all_cases
+from fyp_iam.fixtures.cases import all_cases, credential_creation_case
 from fyp_iam.fixtures.loader import load_fixture
 
 EXPECTATIONS = {
@@ -11,12 +11,19 @@ EXPECTATIONS = {
     "condition_dependent": (1, VerificationStatus.supported_by_fixture),
     "cyclic": (1, VerificationStatus.supported_by_fixture),
     "missing_context": (1, VerificationStatus.inconclusive),
+    "credential_creation": (1, VerificationStatus.supported_by_fixture),
 }
 
 
 def test_fixture_files_cover_the_required_cases(fixture_dir) -> None:
     loaded = [load_fixture(fixture_dir, case.case_id) for case in all_cases()]
     assert [case.case_id for case in loaded] == list(EXPECTATIONS)
+
+
+def test_checked_in_paired_fixture_matches_its_builder(fixture_dir) -> None:
+    checked_in = load_fixture(fixture_dir, "credential_creation")
+    built = credential_creation_case()
+    assert checked_in.snapshot.model_dump(mode="json") == built.snapshot.model_dump(mode="json")
 
 
 def test_each_fixture_has_the_expected_local_verdict(fixture_dir) -> None:

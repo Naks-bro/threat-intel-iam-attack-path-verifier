@@ -46,6 +46,73 @@ def test_analysis_endpoint_returns_a_fixture_finding(fixture_dir: Path) -> None:
     assert body["verifications"][0]["sandbox"]["status"] == "not_mapped"
 
 
+def test_analysis_endpoint_scopes_one_identity_and_records_empty_result(fixture_dir: Path) -> None:
+    case = positive_case()
+    payload = {
+        "rules": [rule.model_dump(mode="json", by_alias=True) for rule in case.rules],
+        "snapshot": case.snapshot.model_dump(mode="json", by_alias=True),
+        "evaluated_at": case.evaluated_at.isoformat().replace("+00:00", "Z"),
+    }
+    start_id = case.snapshot.nodes[0].node_id
+    response = _client(fixture_dir).post(
+        "/v1/analyses", json={**payload, "start_node_id": start_id}
+    )
+    assert response.status_code == 200
+    assert response.json()["start_node_id"] == start_id
+    assert all(path["start_node_id"] == start_id for path in response.json()["attack_paths"])
+
+    empty = _client(fixture_dir).post(
+        "/v1/analyses", json={**payload, "start_node_id": "principal:role/admin"}
+    )
+    assert empty.status_code == 200
+    assert empty.json()["start_node_id"] == "principal:role/admin"
+    assert empty.json()["attack_paths"] == []
+    assert empty.json()["input_rule_refs"]
+    assert empty.json()["input_rule_digest"].startswith("sha256:")
+
+    missing = _client(fixture_dir).post(
+        "/v1/analyses", json={**payload, "start_node_id": "principal:user/absent"}
+    )
+    assert missing.status_code == 422
+
+    non_principal = _client(fixture_dir).post(
+        "/v1/analyses", json={**payload, "start_node_id": "service:lambda.amazonaws.com"}
+    )
+    assert non_principal.status_code == 422
+
+
+def test_fixture_endpoint_scopes_a_start_identity(fixture_dir: Path) -> None:
+    response = _client(fixture_dir).post(
+        "/v1/analyses/fixtures/credential_creation",
+        params={"start_node_id": "principal:user/developer"},
+    )
+    assert response.status_code == 200
+    assert response.json()["start_node_id"] == "principal:user/developer"
+    assert len(response.json()["attack_paths"]) == 1
+
+    missing = _client(fixture_dir).post(
+        "/v1/analyses/fixtures/credential_creation",
+        params={"start_node_id": "principal:user/absent"},
+    )
+    assert missing.status_code == 422
+
+
+def test_local_analysis_api_rejects_real_account_input(fixture_dir: Path) -> None:
+    case = positive_case()
+    payload = case.snapshot.model_dump(mode="json", by_alias=True)
+    payload["collection"]["permissions_profile"] = "real-read-only-account"
+    response = _client(fixture_dir).post(
+        "/v1/analyses",
+        json={
+            "rules": [rule.model_dump(mode="json", by_alias=True) for rule in case.rules],
+            "snapshot": payload,
+            "start_node_id": "principal:user/alice",
+        },
+    )
+    assert response.status_code == 422
+    assert response.json()["detail"] == "local_fixture_only"
+
+
 def test_fixture_endpoint_loads_the_positive_case(fixture_dir: Path) -> None:
     response = _client(fixture_dir).post("/v1/analyses/fixtures/positive")
     assert response.status_code == 200
@@ -122,6 +189,7 @@ def test_synthetic_records_become_a_finding(fixture_dir: Path) -> None:
         json={
             "rules": [rule.model_dump(mode="json", by_alias=True)],
             "account": account.model_dump(mode="json"),
+            "start_node_id": "principal:user/alice",
             "evaluated_at": "2026-10-02T12:00:00Z",
         },
     )
@@ -133,6 +201,7 @@ def test_synthetic_records_become_a_finding(fixture_dir: Path) -> None:
         "supported_by_fixture"
     )
     assert body["report"]["verifications"][0]["policy_simulation"]["status"] == "not_run"
+    assert body["report"]["start_node_id"] == "principal:user/alice"
     assert body["coverage"]["reconciled"] is True
     assert body["coverage"]["can_assume_count"] == 2
     assert body["coverage"]["permissions_boundary"] == "absent"
@@ -146,11 +215,12 @@ def test_invalid_synthetic_account_is_rejected(fixture_dir: Path) -> None:
     assert response.status_code == 422
 
 
-def test_fixture_list_contains_the_six_cases(fixture_dir: Path) -> None:
+def test_fixture_list_contains_the_seven_cases(fixture_dir: Path) -> None:
     response = _client(fixture_dir).get("/v1/fixtures")
     assert response.status_code == 200
     assert response.json()["fixtures"] == [
         "condition_dependent",
+        "credential_creation",
         "cyclic",
         "explicit_deny",
         "hard_negative",

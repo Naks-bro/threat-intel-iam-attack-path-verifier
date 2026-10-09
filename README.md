@@ -2,9 +2,85 @@
 
 This repository is the implementation checkout for the final-year project. It currently contains one local vertical slice:
 
-Engine 1 also has an experimental evidence foundry in `src/fyp_iam/engine1/foundry/` and a React control plane in `frontend/`. It ingests three pinned extracts (MITRE ATT&CK, AWS Service Authorization Reference, and redacted Stratus metadata), derives three attack primitives, and compiles one additional-credentials candidate. The candidate remains experimental. The AWS Threat Technique Catalog entry is disabled until a stable versioned input exists. The foundry has a closed vocabulary for the first rule family and a six-case pinned scenario corpus; the other two planned rule families, a real AI critic, and stable publication remain open. See `docs/14_ENGINE_1_RESEARCH_GRADE_FOUNDRY_SPEC.md` and `docs/00_STATUS_AND_TRUTH_MODEL.md` for the boundary between the current code and planned work.
+For whole-project installation, operating modes, safety gates and extension
+boundaries, start with [the product foundation runbook](docs/21_PRODUCT_FOUNDATION_RUNBOOK.md).
+Windows collaborators can validate installed dependencies with
+`scripts\setup.ps1 -CheckOnly` and run backend/frontend checks with `scripts\check.ps1`.
+
+## Collaborate
+
+Use branch `engine1-curation-workbench`. `main` is an older fixture baseline. GitHub is the source of truth for code. The shared application database is the existing FYP Supabase Postgres project, not a file in this repo and not Docker.
+
+1. Clone the repository and check out `engine1-curation-workbench`.
+2. Install Python 3.12 and the frontend dependencies in [Commands](#commands).
+3. Copy `.env.example` to `.env`. Ask the maintainer for the session-pooler URL and put it only in that file. Never commit `.env`, certificates, AWS credentials, or account identifiers.
+4. From the repository root, run `python -m fyp_iam.persistence check`. On 2026-10-09 the shared database was migrated through Alembic `20261009_0012`. Do not run `migrate` against it again unless the team has reviewed the migration diff.
+5. Run `scripts\check.ps1`. That check does not need Docker.
+6. Start the API and the portal in two terminals, then open `http://127.0.0.1:5173/`:
+
+```powershell
+.\.venv\Scripts\python.exe -m uvicorn fyp_iam.api.app:app --host 127.0.0.1 --port 8765
+cd frontend
+npm run dev -- --host 127.0.0.1 --port 5173
+```
+
+Supabase is the shared registry. It is the wrong place for disposable tests: those tests write rows and run migrations, so they belong on the local Postgres in `compose.yaml` or on the GitHub Actions `postgres` job. Docker is optional. A collaborator can read and continue the product without it.
+
+The analyst demo still needs a human to name the two starting identities. A policy-text match is not exploit proof. Review stays on the local machine. Do not approve a rule from a public host.
+
+Engine 1 also has an experimental evidence foundry in `src/fyp_iam/engine1/foundry/` and a React control plane in `frontend/`. It ingests three pinned extracts (MITRE ATT&CK, AWS Service Authorization Reference, and redacted Stratus metadata), derives three attack primitives, and compiles one additional-credentials candidate. The canonical candidate stays proposed; the legacy registry exposes experimental publications. The AWS Threat Technique Catalog entry is disabled until a stable versioned input exists. The foundry has a closed vocabulary for the first rule family and a six-case pinned scenario corpus; the other two planned rule families, a real AI critic, and real-account stable publication remain open. A separate benchmark-only scoped stable release API is described below. See `docs/14_ENGINE_1_RESEARCH_GRADE_FOUNDRY_SPEC.md` and `docs/00_STATUS_AND_TRUTH_MODEL.md` for the boundary between the current code and planned work.
 
 An opt-in verifier result must bind to the exact candidate version and evidence snapshot and cite known evidence IDs. Malformed or unbound results move to `needs_review` and cannot publish experimentally. No external model provider is configured or called in ordinary runs.
+
+`python -m fyp_iam.engine1.foundry.runner verify-preview` exercises the new
+request-bound verifier path over the exact bytes of all three reviewed pins.
+It uses only a schema-only fake and prints a small status summary with its request
+digest; no database configuration, persistence or network is used. This is an
+adapter-wiring check, not a real AI evaluation. Ordinary persisted GUI/CLI runs
+now use this bound schema-only verifier over explicitly selected stored inputs.
+Offline GUI preview remains in-memory and does not manufacture stored records.
+
+With an explicitly reviewed application database migrated through 0006,
+`python -m fyp_iam.engine1.foundry.runner verify-run` commits a bound fake-verifier
+run and stores its exact request/result. Ordinary `run` and the portal pipeline
+button now use the same exact stored-input path. Migration 0006 is required;
+missing or corrupted stored inputs fail the transaction without a legacy fallback.
+It intentionally uses private database configuration, unlike `verify-preview`.
+See the foundation runbook and ADR-012 before invoking it. No managed migration
+or real AI is implied by the local PostgreSQL verification.
+
+The rule dossier can inspect rechecked verifier metadata from persisted runs:
+input/output digests, source versions, citations and findings. Legacy rows and
+offline previews show exact records as unavailable rather than inventing history.
+The fake remains a schema-only harness, not independent AI verification.
+
+Exact-input scoped review now has an opt-in local API. It is disabled in the
+ordinary API and preview. For operator configuration, endpoints and limitations,
+see [local review mode](docs/21_PRODUCT_FOUNDATION_RUNBOOK.md#local-operator-review-mode).
+Migration 0007 is required for review storage. A recorded decision is not stable
+publication, authenticated identity or authority to execute AWS writes.
+
+The dossier now includes a scoped operator-review panel in that explicit local
+mode. It freezes the displayed assurance digests, requires confirmation, renders
+retained history, and retries uncertain outcomes with the same request id.
+Missing inputs/disabled mode are read-only; stale conflicts require reloading
+the dossier. Stable publication/export enforcement is still unfinished.
+
+A separate local operator endpoint now computes current scoped publication
+readiness from rechecked quality/verifier inputs and the latest decision:
+`GET /v1/foundry/rules/{version_id}/publication-assessment?scope=read_only_account_analysis`.
+Real-account/lab verifier policy is not configured and fails closed. Only an
+explicit synthetic benchmark can satisfy the current fake-harness policy.
+The endpoint does not publish or export; legacy experimental publication has
+not yet been migrated to this gate. See ADR-014 and the foundation runbook.
+
+The follow-up [scoped stable release API](docs/decisions/ADR-015-scoped-stable-release-export.md)
+adds durable, exact-review-bound release creation and a separately gated export.
+Migration 0008 is required. Only the explicit benchmark fake policy is implemented;
+real-account stable publication remains disabled. The proposed candidate is never
+mutated, and later rejection prevents export. Stable releases are separate from
+the legacy experimental registry and have no GUI controls yet. Engine 3's new
+fresh-export consumer still reports this family's precondition as unsupported.
 
 The foundry command can preview the deterministic result without a database: `python -m fyp_iam.engine1.foundry.runner preview`. With a private `FYP_DATABASE_URL`, `python -m fyp_iam.engine1.foundry.runner run` persists one bounded run. A transaction lock rejects overlapping runs. External scheduling can invoke the `run` command; no always-on scheduler is installed by this checkout. The command prints only a small status summary, not source payloads or connection strings.
 
@@ -41,6 +117,13 @@ The slice runs on synthetic JSON fixtures and one checked-in technique pin. It d
 Engine 2 can also build an `IAMGraphSnapshot` from synthetic identity and trust statements. That normalizer understands an exact `sts:AssumeRole` plus a matching trust, and an exact `service:<name>.amazonaws.com` trust. Those records are checked against the hand-built fixture verdicts. `collect_live_account` refuses to run and does not call AWS.
 
 Raw ChatGPT exports are not part of this repository. Curated project documents live in `docs/`. Labels in those documents still mean what `docs/00_STATUS_AND_TRUTH_MODEL.md` says: **Verified**, **Accepted decision**, **Proposed**, **Reported/unverified**, and **Rejected/corrected**.
+
+Real AWS analysis is the intended next target, with product-foundation work first.
+An explicit [connection preflight](docs/20_AWS_CONNECTION_SECURITY.md) now requires
+a named profile and expected account, blocks root/mismatched identities, and
+performs two bounded IAM read probes. It is not account collection or policy
+analysis. MCPO integration remains unverified. Ordinary API and preview paths do
+not invoke the preflight or contact AWS.
 
 Coding agents should start with [AGENTS.md](AGENTS.md). The optional [ECC skill map](docs/16_ECC_SKILL_WORKFLOW.md) lists the project-local Cursor skills and how to use them without overriding this project's evidence and approval boundaries; the full native Codex plugin is a separate per-user installation.
 
@@ -101,13 +184,24 @@ py -3.12 -m venv .venv
 .\scripts\check.ps1
 ```
 
-`scripts/check.ps1` runs Ruff, mypy, and pytest.
+`scripts/check.ps1` runs Ruff, mypy, generated consumer-contract checks,
+non-PostgreSQL pytest, frontend tests and build. Quality types, the quality
+fixture and verifier types must match their provider schemas; stale/missing
+artifacts fail without being overwritten. Regenerate to stdout with
+`scripts/quality_contract_types.py` (optionally `--fixture` or `--verifier`),
+then review the diff before replacing the corresponding generated artifact.
+It isolates database URL selectors for routine checks. `-BackendOnly` skips the
+frontend; `-IncludePostgres` requires an explicitly opted-in disposable loopback
+database and does not migrate or seed it. Marked database test bodies have the
+same fail-closed target gate. See ADR-011 and the foundation runbook.
 
 The checked-in fixtures are the six cases `positive`, `hard_negative`, `explicit_deny`, `condition_dependent`, `cyclic`, and `missing_context`. Regenerate them with `scripts/write_synthetic_fixtures.py` after changing `src/fyp_iam/fixtures/cases.py`. A contract test fails if the JSON drifts from the builders.
 
 ## Workbench persistence
 
-PostgreSQL is the workbench store. SQLAlchemy, Psycopg, and Alembic are the implementation. A managed host such as Supabase is optional and is not imported by the application. Copy `.env.example` to `.env` and set the variables there. Do not commit `.env`.
+PostgreSQL is the workbench store. SQLAlchemy, Psycopg, and Alembic are the implementation. The application talks to Postgres through `FYP_DATABASE_URL`. Supabase is the shared host for that database. The Python package does not import a Supabase client. Copy `.env.example` to `.env` and set the variables there. Do not commit `.env`.
+
+The FYP Supabase database was migrated from Alembic `20261003_0004` through `20261009_0012` on 2026-10-09. Migrations `0009`–`0012` are the Engine 2 collection shell, normalized inventory, observed graph, and snapshot-purge tables. A read-only AWS normalizer can build a redacted in-memory preview. A synthetic writer can store a handoff in an opted-in disposable loopback database. The real-account writer reuses those same tables and refuses any database that is not that disposable loopback, so the shared Supabase project is not the test target. Saving a real-account snapshot there, and proving the digest roundtrip, is still open. Supabase Auth is the chosen analyst identity direction. Login is not enabled. Review and IT export stay local.
 
 - `FYP_DATABASE_URL` is the application URL. Use a direct host, or a session pooler on port 5432. Do not use port 6543.
 - `FYP_MIGRATION_DATABASE_URL` is optional. Alembic uses it when it is set.
@@ -123,7 +217,8 @@ PostgreSQL is the workbench store. SQLAlchemy, Psycopg, and Alembic are the impl
 ## Safety
 
 - No credentials, account IDs, raw ARNs, or raw policy documents belong in Git or fixtures.
-- Live AWS access stays read-only, and this slice does not call AWS at all.
+- Live AWS access stays read-only. Ordinary fixture/API/preview paths do not call
+  AWS; only the explicit operator preflight performs the three allowlisted probes.
 - Remediation proposals always require human review.
 - Rule text is data. Relationship types are an allowlist, not executable queries.
 - Do not provision CloudGoat or vulnerable resources from this checkout.

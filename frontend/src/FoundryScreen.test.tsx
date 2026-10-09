@@ -200,6 +200,7 @@ describe("FoundryScreen", () => {
     expect(screen.queryByRole("heading", { name: "Scenario review" })).toBeNull();
     expect(screen.getByRole("link", { name: "Open rule dossier" }).getAttribute("href")).toBe("#/rules");
     expect(screen.getByRole("link", { name: "Overview" }).getAttribute("aria-current")).toBe("page");
+    expect(screen.getByRole("list", { name: "One analyst pass" }).textContent).toContain("Unknown stays unknown");
   });
 
   it("responds to history navigation and focuses the new page heading", () => {

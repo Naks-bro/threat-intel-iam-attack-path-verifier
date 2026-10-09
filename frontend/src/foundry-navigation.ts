@@ -1,6 +1,7 @@
 import { useSyncExternalStore } from "react";
 
 export const FOUNDRY_PAGES = [
+  { key: "investigate", label: "Identity investigation", title: "Compare IAM identities", icon: "evidence", description: "Compare two starting identities on the synthetic fixture or a loaded real-account observation." },
   { key: "overview", label: "Overview", title: "Operations overview", icon: "overview", description: "Monitor evidence health, candidate assurance, and the boundaries of the current Engine 1 run." },
   { key: "pipeline", label: "Pipeline", title: "Pipeline operations", icon: "run", description: "Inspect the latest evidence computation and source outcomes. Run history and retry ancestry are still being developed." },
   { key: "sources", label: "Source intelligence", title: "Source intelligence", icon: "sources", description: "Inspect enabled inputs, pinned versions, and connector health. Disabled sources do not contribute to active source health." },

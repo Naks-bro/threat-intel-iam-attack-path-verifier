@@ -63,9 +63,27 @@ approved -> deprecated -> superseded
 
 Only `approved` rules are eligible for Engine 3. Approval is scoped: a rule approved for a benchmark is not automatically approved for production analysis.
 
+## Scoped stable release envelope (Proposed additive contract)
+
+`contracts/releases.py` defines `StableReleaseCommand` and `StableRuleRelease 0.1`.
+This does not alter `ApprovedRule` or make any Proposed contract Accepted. Stable
+release history binds the immutable proposed candidate, separately approved rule
+representation, exact review id/hash, scope, quality/verifier/evidence hashes,
+timestamps and local aliases. Structural fields cannot differ between candidate
+and export; digests provide integrity checks, not signatures or authorization.
+
+Only `local-benchmark-gate-0.1` exists, so this contract currently requires
+`synthetic_benchmark` and `channel=stable`. A reviewed real/lab policy needs explicit
+contract/policy extension; labels cannot enable it. Engine 3's fresh export-loader
+seam invokes the trusted exporter for each analysis. Cached envelopes cannot
+establish current eligibility. Generic fixture analysis is separate and does not
+enforce this freshness boundary. ADR-015 records behavior and remaining work.
+
 ## `IAMGraphSnapshot v0.1`
 
-Purpose: a reproducible representation of collected AWS authorization state. Neo4j is an implementation detail; this contract must be serializable for fixtures and tests.
+The proposed **pre-graph** read-only AWS handoff is separate from this graph contract: [`CollectionHandoff`](../src/fyp_iam/contracts/inventory.py) binds a redacted `InventorySnapshot` to a sealed `CollectionManifest` and rejects dangling references or changed inventory bytes. See [the handoff guide](27_AWS_INVENTORY_HANDOFF_CONTRACT.md). It is fixture-tested, not a live collector, persisted account snapshot, or authorization evaluator.
+
+Purpose: a reproducible representation of collected AWS authorization state. Graph storage is a separate implementation concern; PostgreSQL is the current proposed system of record. This contract must remain serializable for fixtures and tests.
 
 ```json
 {
@@ -183,6 +201,8 @@ Result status values:
 
 Never collapse `supported_by_policy_simulation` into `verified_in_mapped_sandbox`.
 
+The offline branch walker in `docs/28_ENGINE_3_BRANCH_WALK.md` uses a separate proposed status set. Those values do not replace this contract and must not be read as a real-account verdict.
+
 ## `Finding v0.1`
 
 Engine 4 combines immutable references rather than rewriting evidence:
@@ -214,4 +234,4 @@ ADR-004 implements the models above with these additions. They remain Proposed:
 - `priority_model.features` is a typed baseline feature object. `baseline-v1` score is `severity_weight * status_weight`.
 - Policy documents, when present, are redacted hash references. Raw policy JSON is rejected.
 - Condition-key values are not interpreted. Callers pass an explicit per-edge resolution or the result stays inconclusive.
-
+- `AnalysisReport.graph_input_digest` pins the normalized `IAMGraphSnapshot` JSON actually analyzed. Object keys are sorted and list order is retained before SHA-256 hashing. This is a local input-integrity reference, **not** an authenticated collector seal, AWS provenance, or proof of effective permission. The two-identity fixture comparison requires equal valid graph and rule-input digests, not merely equal snapshot IDs.

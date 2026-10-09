@@ -8,13 +8,19 @@
 | D-002 | Human approval and read-only live AWS are hard safety boundaries | Proposed for team acceptance | `decisions/ADR-002-human-approval-and-read-only-live-aws.md` |
 | D-003 | Versioned contracts enable parallel engine development | Proposed for team acceptance | `decisions/ADR-003-contract-first-integration.md` |
 | D-004 | Primary knowledge sources are MITRE ATT&CK Cloud, AWS TTC, and a pinned OWASP cloud-native document | Proposed | Pending ADR after access-format spike |
-| D-005 | Neo4j is the graph persistence/query baseline; portable JSON remains the engine contract | Proposed | Pending benchmark |
+| D-005 | Earlier Neo4j baseline is superseded by proposed PostgreSQL-first snapshot/graph storage; portable JSON remains the engine contract | Superseded/proposed replacement, not migrated | `24_WHOLE_PRODUCT_SCHEMA_PROPOSAL.md`; measured need required before another graph store |
 | D-006 | Policy Simulator is a pre-check with explicit limitations | Proposed | Pending implementation test |
 | D-007 | CloudGoat verification is scenario-mapped and opt-in | Proposed | Pending guide/account-owner approval |
 | D-008 | GNN and Redis are deferred until justified | Proposed | Pending vertical-slice measurements |
 | D-010 | A source node may be one family or a combination. Strength counts distinct families. NVD and CISA KEV are pinned free feeds. AWS TTC waits. | Proposed | `decisions/ADR-007-source-strength.md` |
 | D-011 | Engine 1 checkpoint is a pipeline portal with PostgreSQL. Product direction is superseded by the foundry. | Proposed | `decisions/ADR-008-engine1-curation-workbench.md` |
 | D-012 | Engine 1 is an automated threat-to-rule foundry. The portal is a control plane. AI verifies and does not author rules. AWS TTC HTML is not an adapter. T1548 is not a precise IAM mapping. | Proposed | `decisions/ADR-009-threat-to-rule-foundry.md` |
+| D-013 | Routine checks stay offline; marked database tests require an explicit disposable-loopback gate. Setup does not migrate or seed. | Proposed, locally implemented | `decisions/ADR-011-disposable-database-test-boundary.md` |
+| D-014 | Exact verifier requests/results are retained separately from incomplete legacy AI rows; historical inputs never fall back to current pins. | Proposed, locally verified | `decisions/ADR-012-exact-verifier-records.md` |
+| D-015 | Scoped exact-input review history is separate from incomplete legacy aliases; stored approval is not current eligibility or cloud authority. | Proposed, repository operations locally verified | `decisions/ADR-013-scoped-exact-input-review-history.md` |
+| D-016 | Compute current scoped readiness separately from release/export; fake policy is benchmark-only and real/lab policy remains unconfigured. | Proposed, local API and isolated database checks verified | `decisions/ADR-014-computed-publication-assessment.md` |
+| D-017 | Durable scoped stable releases preserve candidate bytes and recheck latest assurance/review at export; Engine 3 must request a fresh export. | Proposed, local API/database/restart verified | `decisions/ADR-015-scoped-stable-release-export.md` |
+| D-018 | First real-account pilot compares two starting IAM identities from one authorized AWS project/account and one sealed snapshot, investigating one identity at a time. Neither comparator is an account-wide security verdict. | Accepted user direction, 2026-10-09; implementation remains proposed | `decisions/ADR-016-two-identity-iam-pilot.md` |
 
 ## Highest-priority open questions
 
@@ -62,4 +68,3 @@
 ## Decision procedure
 
 For each open question, record owner, deadline, evidence considered, decision, alternatives, consequences, and affected contracts. Do not resolve high-impact questions only in chat; create or update an ADR.
-

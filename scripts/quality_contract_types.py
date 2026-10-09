@@ -10,6 +10,8 @@ from pathlib import Path
 from typing import Any
 
 from fyp_iam.engine1.foundry.quality import QualityReport
+from fyp_iam.engine1.foundry.review import ReviewState
+from fyp_iam.engine1.foundry.verifier_models import VerifierRecordSummary
 
 ROOT = Path(__file__).resolve().parents[1]
 TARGET = ROOT / "frontend" / "src" / "generated" / "quality-types.ts"
@@ -38,10 +40,12 @@ def _type(schema: dict[str, Any]) -> str:
     raise ValueError(f"unsupported quality-contract schema type: {kind}")
 
 
-def generated_types() -> str:
-    schema = QualityReport.model_json_schema()
-    definitions = {**schema.get("$defs", {}), "QualityReport": schema}
-    lines = ["// Generated from QualityReport.model_json_schema(); do not edit by hand."]
+def generated_types(*, verifier: bool = False, review: bool = False) -> str:
+    model = ReviewState if review else VerifierRecordSummary if verifier else QualityReport
+    name = model.__name__
+    schema = model.model_json_schema()
+    definitions = {**schema.get("$defs", {}), name: schema}
+    lines = [f"// Generated from {name}.model_json_schema(); do not edit by hand."]
     for name, body in sorted(definitions.items()):
         lines.extend(["", f"export type {name} = {{"])
         required = body.get("required", [])
@@ -76,14 +80,28 @@ def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--check", action="store_true")
     parser.add_argument("--fixture", action="store_true")
+    parser.add_argument("--verifier", action="store_true")
+    parser.add_argument("--review", action="store_true")
     arguments = parser.parse_args()
-    expected = generated_fixture() if arguments.fixture else generated_types()
+    if arguments.fixture and arguments.verifier:
+        parser.error("Verifier fixture generation is not supported")
+    if arguments.review and (arguments.fixture or arguments.verifier):
+        parser.error("Review generation cannot be combined with fixture or verifier")
+    expected = (
+        generated_fixture()
+        if arguments.fixture
+        else generated_types(verifier=arguments.verifier, review=arguments.review)
+    )
     target = FIXTURE_TARGET if arguments.fixture else TARGET
+    if arguments.verifier:
+        target = TARGET.with_name("verifier-types.ts")
+    if arguments.review:
+        target = TARGET.with_name("review-types.ts")
     if arguments.check:
         if not target.exists() or target.read_text(encoding="utf-8") != expected:
-            print(f"Quality consumer contract is stale. Regenerate and review {target.name}.")
+            print(f"Consumer contract is stale. Regenerate and review {target.name}.")
             return 1
-        print("Quality consumer contract matches the provider schema.")
+        print(f"Consumer contract matches the provider schema: {target.name}.")
     else:
         print(expected, end="")
     return 0

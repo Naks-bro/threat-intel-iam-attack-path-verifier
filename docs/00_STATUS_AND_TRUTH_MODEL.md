@@ -1,6 +1,223 @@
 # Project Status and Truth Model
 
-Last curated: 2026-10-03
+Last curated: 2026-10-09
+
+**Latest AWS read checkpoint:** the owner supplied an independent AWS Settings
+project reference, and the refreshed `fyp-aws` STS identity matched it privately.
+The bounded non-root preflight passed. A later one-page, read-only IAM preview
+observed two users, 17 roles, zero groups and two local managed policies; two
+user-group traversals and three bounded AWS-managed policy reads completed.
+The in-memory redacted handoff and observed-only graph validated with 19
+principals and 36 direct relations; draft mapping accepted 95 rows. The HMAC
+key was discarded and **nothing was persisted**. Managed-policy read-budget,
+unresolved-trust and unevaluated-statement gaps remain, so source coverage and
+authorization evaluation are false. This is not a durable real-account
+snapshot, a two-identity comparison, or an IAM authorization verdict. See
+[handoff boundary](27_AWS_INVENTORY_HANDOFF_CONTRACT.md).
+
+**Repeatable-key preparation:** the opt-in AWS normalizer now supports a
+private, 32-byte HMAC key for repeatable **in-memory** pseudonyms; malformed
+or degenerate configuration fails before any AWS read. No production key or
+retained real-account handoff exists. A local seal can bind that key to a
+handoff hash and refuse expired or purged use. On 2026-10-09 the managed
+FYP database was migrated from `20261003_0004` through `20261009_0012`.
+Scheduled purge remains unbuilt. `engine2.real_account_store` can store one opted-in redacted `real_account_observed` handoff, including its observed graph, on disposable loopback `fyp_iam` only. It rejects credentials, raw policy bodies, and `authorization_evaluated=true` before a transaction. That PostgreSQL roundtrip stays unverified until a disposable loopback is configured. It is not a managed import.
+
+**Engine 3 branch proposal, 2026-10-09:** a teammate design for Terraform plus
+Pathrunner is **proposed, not approved**. Public lab docs show predefined
+scenarios, not an arbitrary branch executor, and creating a Lambda function
+does not make the caller assume its role. The current project is not a
+sandbox target. An offline walker in `engine3/branch_walk.py` records a
+synthetic AssumeRole chain and rejects the invalid Lambda identity hop. See
+[docs/28_ENGINE_3_BRANCH_WALK.md](28_ENGINE_3_BRANCH_WALK.md).
+
+**Latest schema preparation:** the user delegated the first AWS snapshot
+retention choice; the selected design maximum is 90 days for redacted policy/
+topology evidence, with owner consent and purge still outstanding ([ADR-018](decisions/ADR-018-redacted-aws-snapshot-retention.md)).
+An unapplied 0011 observed-graph draft now adds four snapshot-scoped private
+tables. Its projection row retains bounded incomplete-reason codes so its
+stored digest can eventually be reconstructed. A pure row mapper binds an
+exact redacted handoff to observed nodes, direct edges and policy/trust
+evidence; it makes no database write or permission claim. A fresh disposable
+rehearsal again reached 0011 from both empty and reconstructed-0004 paths with
+matching 46-table catalogs, 19 empty RLS-enabled Engine 2/graph tables and
+five synthetic legacy rows preserved. An opt-in **synthetic-only** writer now
+commits the handoff and observed graph in one disposable-database transaction;
+readback reprojects the exact stored handoff, compares every graph row, and
+rejects a changed edge. An opted-in real-account writer can store that observed graph with the handoff on disposable loopback only. There is no permission resolver, public import route, or managed migration.
+Migrations `20261009_0009`–`20261009_0010` are locally authored but **not
+applied to Supabase**. 0010 adds nine normalized IAM evidence tables with
+snapshot-scoped foreign keys and no raw policy body storage. A pure mapper
+converts a validated handoff into all nine row types. A separate synthetic-only
+writer now atomically commits and reads back a small redacted fixture on an
+owned disposable loopback database, reconstructs its original ordered lists,
+rechecks both digests, and rejects a changed statement digest and duplicate
+request. A separate opted-in writer stores `data_kind=real_account_observed` on an `external_profile` connection in those same tables. It has no API route and is not a managed DB migration.
+0009 adds six empty private Engine 2 connection/run/ordered-task/snapshot/
+layer-coverage/gap tables,
+no IAM policy bodies or credentials, a snapshot expiry constraint, explicit
+browser-role revocations and RLS enabled with no browser policies. Fresh and
+reconstructed-0004 disposable PostgreSQL 17.11 paths matched at 42 tables;
+five synthetic legacy rows were retained exactly, and the new tables were
+empty with RLS enabled. The rehearsal also rejected cross-snapshot policy and
+statement references. The test server was stopped and its one-time password
+file removed. That rehearsal was not itself a managed migration. Later on
+2026-10-09 the owner asked for a live registry, and Alembic applied
+`0005` through `0012` on the FYP database. The loopback API then reported
+`database available` and `storage postgres`. That is not a published rule
+or a real-account snapshot.
+The backend-only gate passed with 598 tests, 12 opt-in PostgreSQL tests
+deselected, Ruff, mypy (100 source files), and four generated contract checks.
+
+**Latest handoff-to-schema bridge:** a pure local preparation function now
+revalidates mutable `CollectionHandoff` bytes and maps sanitized run, ordered
+task, snapshot, all seven policy-layer summaries and scoped coverage-gap
+metadata to proposed 0009 columns. The snapshot records separate inventory
+and whole-handoff digests. The bridge rejects
+unrecorded successful-task digests, duplicate task attempts, unknown scoped
+principals and registered-account fingerprint mismatch. A real user with no
+complete group traversal yields a scoped gap, not a clean seal. A synthetic
+insert of these rows passed in rolled-back transactions on both disposable
+PostgreSQL rehearsal paths. No real inventory or normalized policy was stored;
+no AWS call,
+Supabase write, authenticated actor or IT export is provided by this bridge.
+
+**Accepted identity direction:** the user chose individual Supabase Auth
+accounts for real-account analyst review and IT export ([ADR-017](decisions/ADR-017-supabase-auth-analyst-identity.md)).
+No login, deployed backend token verification, application role matrix, managed actor
+table, or real-account decision/export route has been enabled. Local aliases
+remain benchmark-only.
+An isolated, mocked-test backend Auth-server identity resolver now exists;
+this does **not** mean a deployed login or backend route is enabled. Live
+Supabase session verification remains untested.
+
+**Latest group-read checkpoint:** a bounded read-only `fyp-aws` probe found
+zero memberships and zero direct managed/inline policy attachments for the
+reported lab user at the observation time. For a real-account handoff,
+`complete` user-group traversal now requires a matching successful,
+fully-paginated `ListGroupsForUser` task with the same pseudonymous user,
+count, and response digest. This improves collector-declared lineage, but
+does not independently authenticate the AWS response or evaluate permission.
+
+**Latest offline handoff checkpoint:** a private redacted handoff can now be
+validated and compared for two selected IAM identity-policy-text questions by
+`fyp_iam.contracts.handoff_preview`. It emits only fixed observation states and
+aggregate uncertainty/coverage counts; it does not echo keys or policy content,
+contact AWS/PostgreSQL, evaluate authorization, create a finding, or authorize
+an IT export. The backend gate passed with 556 non-PostgreSQL tests and 12
+database tests deselected, plus Ruff, mypy (95 sources), and four generated
+contract checks. No teammate sealed snapshot or Terraform file was found under
+`D:\FYP` at this checkpoint; real-account ingestion and the managed schema
+migration remain unverified.
+
+**Latest reproducibility checkpoint:** local Engine 3 fixture reports bind the
+normalized graph input digest as well as the rule-input digest. The paired
+investigation refuses missing or unequal graph digests for a reused snapshot
+ID. The full routine check passed: 545 non-PostgreSQL tests, 12 database tests
+deselected, 32 frontend tests, Ruff, mypy (94 sources), four generated contract
+checks, and a production frontend build. Two installed-Edge browser journeys
+passed against a separate live loopback preview on ports 5174/8766, including
+the selected identity's two displayed digests and a 320px ledger view. The older
+5173/8765 processes were not replaced. This remains a fixture-only guard, not
+a real-account snapshot seal or IT export.
+
+**Proposed schema refinement:** schema v0.1 now separates an authenticated
+analyst actor, append-only exact-finding review decision, and immutable IT
+report export. The first pilot exports one current accepted finding at a time;
+local aliases, stale evidence and synthetic fixture results cannot authorize a
+real-account IT handoff. These are design constraints, not migrated tables or an
+implemented authentication/export service.
+
+**Latest AWS/pilot checkpoint:** the user accepted two starting IAM identities
+in one authorized AWS project/account and one sealed snapshot, investigated
+individually and compared on a two-row overview ([ADR-016](decisions/ADR-016-two-identity-iam-pilot.md)).
+The dedicated `fyp-aws` CLI profile authenticated through the browser in
+`ap-southeast-2`; STS returned a non-root identity without exposing its account
+details. Agent Toolkit installed, and its catalog listed 113 available skills.
+The bounded preflight now uses the regional Sydney STS endpoint while retaining
+global IAM reads. Its focused tests passed; the full backend gate reported
+544 passed, 12 deselected, Ruff, mypy (94 sources), and four contract checks.
+The profile's least-privilege scope, independent target-account match, post-restart
+MCP call, teammate snapshot, managed schema migration, and real-account analysis
+remain **unverified/not implemented**. No IAM inventory probe or AWS write was
+performed in this checkpoint. See [connection security](20_AWS_CONNECTION_SECURITY.md)
+and [schema-first gates](26_SCHEMA_FIRST_DELIVERY_GATES.md).
+
+**Latest scoped stable-release checkpoint:** migration 0008, closed portable
+release contract and opt-in local publish/export routes retain exact approval
+without mutating the proposed candidate. Export rechecks current assurance/latest
+scoped decision; later rejection or corruption fails closed. Engine 3 has a fresh
+export-loader seam excluding legacy experimental records and requiring explicit
+synthetic snapshot metadata under the only implemented benchmark fake policy.
+467 non-PostgreSQL tests, twelve isolated PostgreSQL tests, Ruff, mypy (83 sources)
+and four existing generated contracts passed. Populated 0007→0008 and actual
+restart preserved an eligible benchmark release and exact gated export.
+Engine 3 still reports the candidate's precondition as unsupported; no finding
+or exploitability is inferred. GUI controls, legacy experimental-policy migration,
+real verifier policy, managed deployment and live AWS/MCPO remain open.
+No frontend/browser check was rerun for this backend-only slice. See ADR-015.
+
+**Latest publication-assessment checkpoint:** an opt-in local GET computes
+current quality/verifier/latest scoped decision readiness under the shared
+transaction lock. Stale or negative decisions block; experimental defaults off.
+The fake policy is benchmark-only; real/lab policy remains unconfigured.
+444 non-PostgreSQL tests, eleven isolated PostgreSQL tests, Ruff, mypy (80 source
+files) and four generated-contract checks passed. Actual restart retained history
+and reproduced a blocked assessment. No frontend change or browser check was
+made for this slice. Durable stable publication/export and migration of legacy
+experimental publication remain open; the response explicitly cannot claim either.
+AWS preflight separately returned `not_configured`: only the default CLI profile
+was listed, and neither project profile nor expected account was configured in
+process/user/machine environment. No AWS request was made for that check.
+
+**Latest operator-review GUI checkpoint:** the dossier now reads scoped history
+and records confirmed exact-input decisions in explicit local operator mode.
+Missing assurance/disabled mode remain read-only. Uncertain outcomes retry the
+unchanged request id; stale conflicts block new submissions until reload.
+379 non-PostgreSQL tests, ten PostgreSQL tests, 24 frontend tests and build passed.
+A real portal/API/database browser test recorded a synthetic-scope revision and
+read it after page reload, with keyboard interaction and four tested widths.
+The screenshot was inspected; no full accessibility/visual-baseline claim follows.
+Stable/export eligibility, managed deployment and live AWS/MCPO remain open.
+
+**Latest local-review API checkpoint:** opt-in loopback routes now record and
+read scoped exact-input review history. Reviewer alias comes from operator
+process configuration, not the browser, and is not authenticated identity.
+Disabled, unsafe-boundary, invalid-input, conflict and unavailable responses are
+explicit and sanitized. 375 non-PostgreSQL tests and ten isolated PostgreSQL
+tests passed, including real HTTP retention/retry/stale/corruption behavior;
+actual restart retained history. Review UI and stable/export eligibility remain
+unfinished. No real human approval, managed migration or AWS/provider call occurred.
+
+**Latest scoped-review foundation:** migration 0007 and typed repository
+operations retain exact version/evidence/quality/verifier bindings with explicit
+read-only-account, isolated-lab and benchmark scopes. Alias identity is not
+authentication. Stale/conflicting requests fail; identical retries preserve the
+original decision and opposing decisions append history. 347 non-PostgreSQL and
+nine isolated PostgreSQL tests, additive upgrade and actual restart retention
+passed. Review API/UI, current eligibility and stable export remain unfinished;
+these test records are not real human approvals or cloud-write authorization.
+
+**Latest default persistence checkpoint:** normal portal/API and CLI runs now
+use exact version-scoped stored inputs and append bound schema-only fake packets.
+Unbound selection is rejected before connecting; corrupt/missing stored bytes
+roll back instead of invoking a legacy fallback. Migration 0006 is required.
+328 non-PostgreSQL and seven isolated PostgreSQL tests passed, as did the ordinary
+CLI, real local portal/API/database browser flow and actual restart retention.
+Offline preview still has no stored record; historical packets are not inferred.
+No managed migration, AWS collection, independent AI or stable approval is claimed.
+The dated checkpoints below describe earlier states unless superseded here.
+
+**Latest dossier checkpoint:** the rule API exposes nullable, rechecked exact
+verifier metadata and the GUI renders its input/output digests, versions,
+citations and findings. Missing historical packets stay unavailable and
+mismatched bindings cannot supply a valid displayed verdict. Raw source text
+is not returned. The fake is explicitly schema-only, not independent critique.
+317 non-PostgreSQL tests, six isolated PostgreSQL tests (including HTTP),
+20 frontend tests, production build and the verifier browser test passed.
+Database-backed API and fixture-driven browser checks are separate evidence;
+neither establishes real AWS acceptance or stable human-approved publication.
+See the foundation runbook for remaining work and verification limitations.
 
 ## Why this file exists
 
@@ -17,6 +234,74 @@ The source material is a set of AI conversation exports. It mixes user decisions
 | **Rejected/corrected** | Superseded, contradicted, unsafe, or misleading | No |
 
 ## Current verified inventory
+
+**Exact verifier persistence checkpoint, 2026-10-03:** migration 0006 adds an
+application-append-only packet table without replacing old AI records. The opt-in
+`verify-run` path reads explicit stored source versions and checks artifact bytes,
+metadata and scope before preserving the full bound request/result. Packet reads
+revalidate rule JSON, content and response digests; missing history is not inferred.
+Verified: 298 non-PostgreSQL tests, Ruff and mypy passed; six PostgreSQL tests
+passed separately. Fresh migration through 0006, reconstructed populated 0005
+upgrade and actual stop/start packet retention passed on owned disposable clusters.
+The first local migration failure was caught and corrected; see the database record.
+Supabase, remote CI, default-run/API/GUI integration, failed-provider observations,
+real AI and stable publication remain unverified or unfinished. P7.1 is partial.
+
+**Opt-in pinned-verifier integration, 2026-10-03:**
+`compile_verified_snapshot` now selects actual bytes from the three reviewed
+redacted pins and verifies hashes, versions and origin metadata before invoking
+the request-bound critic. Missing or tampered payloads fail closed without a
+provider call or fallback to current files. Deterministic validators run once;
+their disagreement cannot be overridden by a passing critique. The explicit
+`verify-preview` command exercises this path without reading database configuration
+or persisting anything. Verified: 285 non-PostgreSQL tests, Ruff and mypy passed,
+and the command returned a deterministic fake result. Five PostgreSQL tests were
+deselected; frontend/database/browser code was unchanged and their earlier evidence
+is not a verification of this new path. Ordinary GUI and database runs retain the
+legacy compiler. Stored evidence reconstruction/request persistence, defect
+evaluation, real AI and stable publication remain open; P7.1 is still partial.
+
+**Local verifier-boundary checkpoint, 2026-10-03:** wrong prompt versions and
+malformed, duplicate, oversized or conservatively unsafe response content cannot
+produce a passing checked verdict. A frozen public-evidence request and optional
+provider-neutral async runner bind selected bytes to replies, sanitize provider
+errors, handle cooperative deadlines and disable external invocation by default.
+The fake remains schema-only. The legacy compiler is not integrated with the new
+runner; its evidence hash is unchanged and is not a full content snapshot digest.
+No real AI, live AWS collection or stable-publication claim follows from this
+boundary. P7.1 remains partial; see the foundation runbook for exact limitations.
+Verification: 275 non-PostgreSQL tests passed, five database tests deselected,
+16 frontend tests and production build passed; Ruff and mypy passed. The existing
+Starlette warning remains. No browser or PostgreSQL rerun was needed for this
+internal boundary change; earlier results retain their separately stated scope.
+
+**Latest shared-foundation checkpoint, 2026-10-03:** Windows setup/check entry
+points and `21_PRODUCT_FOUNDATION_RUNBOOK.md` now separate dependency setup,
+offline preview, persistence and cloud preflight. Routine checks isolate database
+URL selectors and exclude PostgreSQL tests. Marked database bodies require an
+explicit disposable-loopback gate; 21 guard tests pass, including a subprocess
+body-execution check. The Docker port is loopback-only in configuration; Docker
+was not run. CI migration/reset steps use the same gate, but the changed remote
+workflow has not run. Latest local check: 247 non-PostgreSQL tests, 16 frontend
+tests, frontend build, Ruff and mypy passed. Three Edge browser flows passed and
+the desktop architecture screenshot was inspected; no full accessibility,
+performance, or visual-baseline certification is claimed. The offline run
+deselected five database tests; a separate fresh owned PostgreSQL cluster then
+passed the target gate, migrations 0001–0005, all five database tests and actual
+restart durability. The existing Starlette deprecation warning remains. Dependency
+audit found zero high/critical and two moderate test-tooling findings, tracked
+in the runbook. Fresh-machine install, managed deployment, AWS/MCPO acceptance,
+review/publication gates and commit/push remain open. Foundation readiness is
+not yet a completed product claim.
+
+**Latest AWS foundation checkpoint, 2026-10-03:** caller identity succeeded but
+was root; no IAM inventory was collected. The separate operator preflight now
+requires a named profile and expected target, blocks root/wrong accounts, bounds
+its two IAM probes, isolates child-process credentials, and redacts output.
+Live collection remains disabled. Non-root account acceptance and MCPO are
+unverified. The user now prioritizes a strong product foundation over immediate
+implementation of every engine; real read-only analysis remains the target.
+See `20_AWS_CONNECTION_SECURITY.md` for the implementation and remaining gaps.
 
 The statements in this section describe this implementation repository after the local slice was added. The original curation folder still holds the raw conversation exports and the pre-implementation baseline. Those exports are not in this Git tree.
 

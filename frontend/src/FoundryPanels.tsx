@@ -1,5 +1,7 @@
 import type { FoundryOverview, FoundrySource, RuleDetail } from "./foundry-api";
 import { QualityReportPanel } from "./QualityReportPanel";
+import { ReviewPanel } from "./ReviewPanel";
+import { VerifierRecordPanel, verifierRecordMatches } from "./VerifierRecordPanel";
 import { StatusTag } from "./FoundryStatus";
 
 export { StatusTag } from "./FoundryStatus";
@@ -75,7 +77,9 @@ export function RulePanel({ overview, rule, onOpen }: { overview: FoundryOvervie
   const validationPasses = requiredValidations.filter((item) => item.result === "pass").length;
   const optionalUnavailable = rule?.validations.filter((item) => item.optional && item.result === "unavailable").length ?? 0;
   const scenarioPasses = rule?.scenarios.filter((item) => item.result === "pass").length ?? 0;
-  const fakeVerifier = rule?.ai_verification?.provider === "fake";
+  const invalidRecord = !!rule?.verifier_record && !verifierRecordMatches(rule.verifier_record, rule.version_id, rule.semantic_hash, rule.quality_report?.evidence_snapshot_hash);
+  const verifier = invalidRecord ? null : rule?.verifier_record ?? rule?.ai_verification;
+  const fakeVerifier = verifier?.provider === "fake";
   return (
     <section className="control-panel release-control" aria-labelledby="release-title">
       <PanelHeading code="RULE REGISTRY / RELEASE GATE" title="Candidate assurance" aside={<StatusTag value={rule?.publication?.channel ?? "gated"} />} id="release-title" />
@@ -103,12 +107,14 @@ export function RulePanel({ overview, rule, onOpen }: { overview: FoundryOvervie
           <div className="assurance-matrix">
             <article><span>Required checks</span><strong>{validationPasses}/{requiredValidations.length}</strong><small>{optionalUnavailable} optional {optionalUnavailable === 1 ? "tool" : "tools"} unavailable</small></article>
             <article>
-              <span>{fakeVerifier ? "Verifier harness" : "AI critic"}</span><strong>{rule.ai_verification?.verdict ?? "absent"}</strong>
-              <small>{fakeVerifier ? "Schema-only harness; no external model called" : rule.ai_verification ? `${rule.ai_verification.provider} / ${rule.ai_verification.model}` : "No verifier result stored"}</small>
+              <span>{fakeVerifier ? "Verifier harness" : "Recorded verifier"}</span><strong>{invalidRecord ? "binding mismatch" : verifier?.verdict ?? "absent"}</strong>
+              <small>{fakeVerifier ? "Schema-only harness; no external model called" : verifier ? `${verifier.provider} / ${verifier.model}` : "No trusted verifier result available"}</small>
             </article>
             <article><span>Scenario corpus</span><strong>{scenarioPasses}/{rule.scenarios.length}</strong><small>expected outcomes passed</small></article>
           </div>
           <QualityReportPanel report={rule.quality_report} versionId={rule.version_id} semanticHash={rule.semantic_hash} />
+          <VerifierRecordPanel record={rule.verifier_record} versionId={rule.version_id} semanticHash={rule.semantic_hash} evidenceHash={rule.quality_report?.evidence_snapshot_hash} />
+          <ReviewPanel rule={rule} />
           {rule.validations.length ? (
             <div className="validation-review" aria-label="Validation review">
               <h4>Validation review <span>Required checks and optional tools are separate</span></h4>

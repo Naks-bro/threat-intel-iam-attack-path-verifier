@@ -1,12 +1,14 @@
 import type { FoundryOverview, RuleDetail } from "./foundry-api";
 import { EvidencePanel, PipelinePanel, PrimitivesPanel, RulePanel, SourcesPanel, StatusTag } from "./FoundryPanels";
 import type { FoundryPage } from "./foundry-navigation";
+import { InvestigationPage } from "./InvestigationPage";
 
 export function FoundryPageContent({ page, overview, rule, onOpen }: {
   page: FoundryPage; overview: FoundryOverview; rule: RuleDetail | null;
   onOpen: (versionId: string) => void;
 }) {
   switch (page) {
+    case "investigate": return <InvestigationPage />;
     case "overview": return <div className="operations-grid"><PipelinePanel overview={overview} rule={rule} /><OperationsBrief overview={overview} rule={rule} /></div>;
     case "pipeline": return <div className="operations-grid"><PipelinePanel overview={overview} rule={rule} /><section className="control-panel"><p className="section-code">RUN VISIBILITY</p><h2>Latest source outcomes</h2><p className="page-note">These are the latest source statuses, not a historical attempt timeline. No retry ancestry is exposed by this API yet.</p><SourceOutcomes overview={overview} /><p className="page-note">Runs are bounded and operator-triggered. An always-on scheduler is not configured.</p><a className="workspace-link" href="#/sources">Inspect source versions <span aria-hidden="true">↗</span></a></section></div>;
     case "sources": return <SourcesPanel sources={overview.sources} previewMode={overview.storage === "preview"} />;

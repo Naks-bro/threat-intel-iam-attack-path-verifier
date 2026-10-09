@@ -1,10 +1,12 @@
-"""The six synthetic cases required by the first vertical slice."""
+"""Synthetic cases for the local analysis adapter."""
 
 from datetime import datetime
 
 from pydantic import BaseModel, ConfigDict, Field
 
 from fyp_iam.contracts.models import (
+    Approval,
+    ApprovalDecision,
     ApprovedRule,
     AuthorizationEffect,
     ConditionResolution,
@@ -13,8 +15,10 @@ from fyp_iam.contracts.models import (
     IAMGraphSnapshot,
     NodeType,
     Precondition,
+    RuleStatus,
     SnapshotValidationStatus,
 )
+from fyp_iam.engine1.foundry.pipeline import build_foundry
 from fyp_iam.fixtures.builders import (
     EVALUATED_AT,
     assume_chain_rule,
@@ -237,6 +241,55 @@ def missing_context_case() -> FixtureCase:
     )
 
 
+def credential_creation_case() -> FixtureCase:
+    """Synthetic account illustration of the first compiled foundry family."""
+    overview = build_foundry(persisted=False, storage="not_written")
+    candidate_data = overview["candidate"]
+    if not isinstance(candidate_data, dict):
+        raise ValueError("foundry candidate is not an object")
+    candidate = ApprovedRule.model_validate(candidate_data["rule"])
+    rule = ApprovedRule.model_validate_json(
+        candidate.model_copy(
+            update={
+                "status": RuleStatus.approved,
+                "approval": Approval(
+                    decision=ApprovalDecision.approved,
+                    reviewer_id="synthetic_fixture",
+                    decided_at=EVALUATED_AT,
+                    comment="Synthetic test approval only; no stable release or AWS authority.",
+                ),
+            }
+        ).model_dump_json()
+    )
+    return FixtureCase(
+        case_id="credential_creation",
+        description=(
+            "Synthetic IAM user can create an additional access key for a second user. "
+            "The derived edge is fixture evidence, not an AWS policy evaluation."
+        ),
+        rules=[rule],
+        snapshot=make_snapshot(
+            "snapshot_credential_creation",
+            [
+                principal("principal:user/developer", "developer", "iam_user"),
+                principal("principal:user/control", "control", "iam_user"),
+                principal("principal:user/target", "target", "iam_user"),
+            ],
+            [
+                make_edge(
+                    "edge_developer_create_key",
+                    EdgeType.CAN_CREATE_AS,
+                    "principal:user/developer",
+                    "principal:user/target",
+                    "policy_developer_create_key",
+                    iam_action="iam:CreateAccessKey",
+                )
+            ],
+        ),
+        evaluated_at=EVALUATED_AT,
+    )
+
+
 def all_cases() -> list[FixtureCase]:
     return [
         positive_case(),
@@ -245,4 +298,5 @@ def all_cases() -> list[FixtureCase]:
         condition_dependent_case(),
         cyclic_case(),
         missing_context_case(),
+        credential_creation_case(),
     ]

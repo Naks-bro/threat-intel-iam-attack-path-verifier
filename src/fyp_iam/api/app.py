@@ -2,6 +2,7 @@
 
 import json
 import logging
+import os
 import re
 from pathlib import Path
 from time import perf_counter
@@ -13,6 +14,9 @@ from sqlalchemy.exc import SQLAlchemyError
 from starlette.middleware.base import RequestResponseEndpoint
 
 from fyp_iam import __version__
+from fyp_iam.api.handoff_api import install_handoff_api
+from fyp_iam.api.review_api import install_review_api
+from fyp_iam.api.sealed_observation_api import install_sealed_observation_api
 from fyp_iam.api.schemas import (
     AnalyzeRequest,
     ApprovalRequest,
@@ -24,7 +28,8 @@ from fyp_iam.api.schemas import (
     SyntheticAnalyzeRequest,
     SyntheticAnalyzeResponse,
 )
-from fyp_iam.contracts.models import ApprovalDecision, ApprovedRule
+from fyp_iam.api.what_if_api import install_what_if_api
+from fyp_iam.contracts.models import ApprovalDecision, ApprovedRule, IAMGraphSnapshot, NodeType
 from fyp_iam.core.report import AnalysisReport
 from fyp_iam.engine1.catalog import SystemCatalog, load_system_catalog
 from fyp_iam.engine1.dataset import CloudTechniqueDataset, load_cloud_technique_dataset
@@ -52,6 +57,7 @@ from fyp_iam.engine1.workbench.errors import DatabaseUnavailable
 from fyp_iam.engine1.workbench.services import build_snapshot, view_from_snapshot
 from fyp_iam.engine2.normalize import normalize_with_coverage
 from fyp_iam.engine3.pipeline import analyze
+from fyp_iam.engine3.scope import require_synthetic_snapshot
 from fyp_iam.engine4.manifest import LocalFixtureManifest, build_local_fixture_manifest
 from fyp_iam.engine4.review_page import (
     render_cloud_dataset,
@@ -73,6 +79,20 @@ from fyp_iam.persistence.urls import prepare_url
 _UNSET = object()
 _REQUEST_ID = re.compile(r"^[A-Za-z0-9_.:-]{1,80}$")
 _LOGGER = logging.getLogger("uvicorn.error.fyp_iam")
+
+
+def _check_local_analysis_input(snapshot: IAMGraphSnapshot, start_node_id: str | None) -> None:
+    try:
+        require_synthetic_snapshot(snapshot)
+    except ValueError as exc:
+        raise HTTPException(status_code=422, detail="local_fixture_only") from exc
+    if start_node_id is None:
+        return
+    start = next((node for node in snapshot.nodes if node.node_id == start_node_id), None)
+    if start is None:
+        raise HTTPException(status_code=422, detail="starting identity is not in the snapshot")
+    if start.node_type != NodeType.principal:
+        raise HTTPException(status_code=422, detail="starting identity must be a principal")
 
 
 def _log_event(level: int, event: str, **fields: object) -> None:
@@ -99,6 +119,7 @@ def create_app(
     *,
     database_url: str | None | object = _UNSET,
     foundry_preview: bool = False,
+    local_reviewer_alias: str | None = None,
 ) -> FastAPI:
     application = FastAPI(
         title="FYP IAM local verification",
@@ -110,6 +131,7 @@ def create_app(
     install_redaction()
     directory = fixture_dir or default_fixture_dir()
     application.state.fixture_dir = directory
+    install_what_if_api(application, directory)
     if foundry_preview:
         raw_url = None
     elif database_url is _UNSET:
@@ -123,6 +145,10 @@ def create_app(
         resolved_url = raw_url if prepare_error else prepared_url
     else:
         resolved_url = None
+
+    install_review_api(application, resolved_url, local_reviewer_alias, preview=foundry_preview)
+    install_handoff_api(application, local_reviewer_alias, preview=foundry_preview)
+    install_sealed_observation_api(application)
 
     @application.middleware("http")
     async def observe_request(request: Request, call_next: RequestResponseEndpoint) -> Response:
@@ -241,6 +267,10 @@ def create_app(
         if foundry_preview:
             _log_event(logging.INFO, "foundry_preview_recomputed", request_id=request_id)
             return preview_overview()
+        host = request.url.hostname or ""
+        public_runs = os.environ.get("FYP_ALLOW_PUBLIC_RUNS") == "1"
+        if host not in {"127.0.0.1", "localhost", "::1", "testclient"} and not public_runs:
+            raise HTTPException(status_code=403, detail="public_run_disabled")
         if not isinstance(resolved_url, str):
             _log_event(
                 logging.WARNING,
@@ -286,12 +316,14 @@ def create_app(
 
     @application.post("/v1/analyses", response_model=AnalysisReport)
     def create_analysis(request: AnalyzeRequest) -> AnalysisReport:
+        _check_local_analysis_input(request.snapshot, request.start_node_id)
         return analyze(
             request.rules,
             request.snapshot,
             limits=request.limits,
             condition_resolutions=request.condition_resolutions,
             evaluated_at=request.evaluated_at,
+            start_node_id=request.start_node_id,
         )
 
     @application.get("/v1/fixtures")
@@ -299,17 +331,19 @@ def create_app(
         return {"fixtures": list_fixture_ids(directory)}
 
     @application.post("/v1/analyses/fixtures/{case_id}", response_model=AnalysisReport)
-    def analyze_fixture(case_id: str) -> AnalysisReport:
+    def analyze_fixture(case_id: str, start_node_id: str | None = None) -> AnalysisReport:
         try:
             case = load_fixture(directory, case_id)
         except FixtureLoadError as exc:
             status_code = 400 if "not allowed" in str(exc) else 404
             raise HTTPException(status_code=status_code, detail=str(exc)) from exc
+        _check_local_analysis_input(case.snapshot, start_node_id)
         return analyze(
             case.rules,
             case.snapshot,
             condition_resolutions=case.condition_resolutions,
             evaluated_at=case.evaluated_at,
+            start_node_id=start_node_id,
         )
 
     @application.post("/v1/rules/intake", response_model=IntakeResponse)
@@ -397,12 +431,14 @@ def create_app(
     @application.post("/v1/analyses/synthetic", response_model=SyntheticAnalyzeResponse)
     def analyze_synthetic(request: SyntheticAnalyzeRequest) -> SyntheticAnalyzeResponse:
         snapshot, coverage = normalize_with_coverage(request.account)
+        _check_local_analysis_input(snapshot, request.start_node_id)
         report = analyze(
             request.rules,
             snapshot,
             limits=request.limits,
             condition_resolutions=request.condition_resolutions,
             evaluated_at=request.evaluated_at,
+            start_node_id=request.start_node_id,
         )
         return SyntheticAnalyzeResponse(
             schema_version="0.1",

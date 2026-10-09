@@ -46,6 +46,7 @@ export type FoundryOverview = {
 };
 
 export type RuleDetail = {
+  verifier_record?: VerifierRecordSummary | null;
   quality_report?: QualityReport | null;
   rule_id: string;
   version_id?: string;
@@ -130,4 +131,88 @@ export async function getFoundryRule(
 export function runFoundryPipeline(): Promise<ApiResult<FoundryOverview>> {
   return requestJson<FoundryOverview>("/v1/foundry/runs", { method: "POST" });
 }
+
+export type CredentialAnalysis = {
+  snapshot_id: string;
+  graph_input_digest: string;
+  start_node_id: string | null;
+  input_rule_refs: Array<{ rule_id: string; rule_version: number }>;
+  input_rule_digest: string;
+  findings: Array<{
+    finding_id: string;
+    priority: string;
+    summary: string;
+    explanation: { why: string; evidence: string[]; verification_status: string };
+    remediation: Array<{ proposal: string; requires_human_review: boolean }>;
+  }>;
+  attack_paths: Array<{
+    start_node_id: string;
+    goal_node_id: string;
+    hops: Array<{ required_action: string; edge_id: string }>;
+    rule_refs: Array<{ rule_id: string; rule_version: number }>;
+  }>;
+  verifications: Array<{
+    status: string;
+    limitations: string[];
+    local_fixture: { missing_context: string[]; unsupported_conditions: string[] };
+    policy_simulation: { status: string };
+    sandbox: { status: string };
+  }>;
+  issues: Array<{ code: string; message: string }>;
+};
+
+export function analyzeCredentialFixture(startNodeId: string, signal?: AbortSignal): Promise<ApiResult<CredentialAnalysis>> {
+  const query = new URLSearchParams({ start_node_id: startNodeId });
+  return requestJson(`/v1/analyses/fixtures/credential_creation?${query}`, { method: "POST", signal });
+}
+
+export type RealAccountObservation = {
+  data_kind: "real_account_observed";
+  snapshot_digest: string;
+  rule_version: number;
+  rule_digest: string;
+  authorization_evaluated: false;
+  identities: Array<{
+    key: string;
+    label: string;
+    outcome: "candidate_from_policy_text" | "no_matching_statement" | "unknown";
+  }>;
+};
+
+export function getRealAccountObservation(signal?: AbortSignal): Promise<ApiResult<RealAccountObservation>> {
+  return requestJson("/v1/observations/real-account-pair", { signal });
+}
+
+export type EdgeRemovalPreview = {
+  original_snapshot_id: string;
+  hypothetical_snapshot_id: string;
+  removed_edge_id: string;
+  baseline_candidate_paths: number;
+  hypothetical_candidate_paths: number;
+  disappeared_candidate_paths: number;
+  appeared_candidate_paths: number;
+  comparison_complete: boolean;
+  limitation: string;
+};
+
+export function previewCredentialEdgeRemoval(
+  edgeId: string,
+  signal?: AbortSignal,
+): Promise<ApiResult<EdgeRemovalPreview>> {
+  return requestJson("/v1/analyses/fixtures/credential_creation/what-if", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ edge_id: edgeId }),
+    signal,
+  });
+}
+export function getReviewState(versionId: string, scope: ReviewCommand["scope"], signal?: AbortSignal): Promise<ApiResult<ReviewState>> {
+  return requestJson(`/v1/foundry/rules/${encodeURIComponent(versionId)}/review?scope=${encodeURIComponent(scope)}`, { signal });
+}
+
+export function recordReview(command: ReviewCommand): Promise<ApiResult<ReviewRecord>> {
+  return requestJson("/v1/foundry/reviews", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(command) });
+}
+import type { ReviewCommand, ReviewRecord, ReviewState } from "./generated/review-types";
 import type { QualityReport } from "./generated/quality-types";
+import type { VerifierRecordSummary } from "./generated/verifier-types";

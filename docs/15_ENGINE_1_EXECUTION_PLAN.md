@@ -337,7 +337,38 @@ Proposed ADR-010. No managed database was changed.
 
 ### Task P7.1: Freeze the verifier interface and threat model
 
+**Local implementation checkpoint (2026-10-03), partial:** frozen request,
+response checks, provider-neutral runner and opt-in pinned compiler path are
+implemented. `verify-preview` exercises actual checked source bytes with the
+fake, no database or network. Missing historical payloads fail closed rather than
+falling back to newer pins. Latest backend checkpoint: 285 tests passed, five
+PostgreSQL tests deselected, Ruff/mypy passed. Stored request/evidence bindings,
+default persisted-run integration and a labeled defect evaluation remain open;
+this is not P7.2 or a real-model validation claim. Details are in the foundation runbook.
+
+**Subsequent storage checkpoint, partial:** explicit `verify-run` reconstructs
+stored version-scoped evidence and retains the exact request/result through
+migration 0006. Local checks passed 298 backend tests and six separate PostgreSQL
+tests; fresh/populated migration and actual restart retention passed. Default
+GUI/database integration, failed-provider observations and labeled defect
+evaluation remain open. ADR-012 is Proposed and no managed migration is claimed.
+
+**Subsequent dossier checkpoint, still partial:** typed nullable metadata is
+exposed through the existing rule API and rendered in the GUI after binding
+checks. Generated consumer types are checked against the provider schema.
+Database-backed HTTP tests and separate browser fixtures passed; legacy rows
+remain unavailable. Default-run integration, failed-provider observations,
+independent semantic critique and durable release approval remain open.
+
 **Description:** Replace the fake function-shaped interface with a provider-neutral protocol, closed request/response models, citation validation, and explicit data-handling configuration. Keep the fake implementation for CI.
+
+**Latest default persistence checkpoint, partial:** ordinary persisted API/CLI
+runs now reconstruct exact selected source versions and retain bound fake packets.
+Unbound selection is rejected and corrupted inputs roll back atomically. Seven
+isolated PostgreSQL tests, the normal CLI, actual local portal/API/database browser
+flow and restart retention passed. Failed-provider observations, independent
+critique/defect evaluation and durable release approval remain open. Offline
+preview does not claim persisted records; migration 0006 is required for new runs.
 
 **Acceptance criteria:**
 
@@ -402,7 +433,24 @@ Proposed ADR-010. No managed database was changed.
 
 ### Task P8.1: Implement exact-version review decisions
 
+**Repository checkpoint, partial (2026-10-03):** a closed review command binds
+rule/evidence/quality/verifier digests and scope. Migration 0007 preserves
+append-only records separately from incomplete legacy decisions. Same-request
+retries are idempotent; conflicting/stale requests fail and new opposing
+decisions preserve history. Nineteen targeted unit tests, nine PostgreSQL tests,
+populated upgrade and actual restart retention passed. Alias identity remains
+a local-operator boundary, not authentication. API/UI and its success/conflict/
+unavailable responses remain open; P8.1 is not complete. See ADR-013.
+
 **Description:** Add typed review commands for approve, reject, and revision request, bound to rule version and evidence snapshot hash.
+
+**Subsequent API checkpoint:** opt-in local review routes accept closed commands
+and return stored records/scoped latest state. Operator identity is separate
+process configuration; unsafe browser/peer/proxy boundaries are rejected.
+Typed/sanitized success, validation, conflict and unavailable responses are
+covered by API tests and real PostgreSQL-backed HTTP checks. 375 non-PostgreSQL
+and ten PostgreSQL tests passed. GUI review, stable eligibility/export and shared
+authorization remain open; this is a local operator boundary, not login security.
 
 **Acceptance criteria:**
 
@@ -429,6 +477,35 @@ Proposed ADR-010. No managed database was changed.
 **Estimated scope:** Medium, 5 files.
 
 ### Task P8.2: Enforce computed publication eligibility
+
+**Stable release checkpoint — 2026-10-07:** migration 0008, portable stable-only
+contract and explicit local create/export APIs now persist exact approval and
+recheck current eligibility at export. Candidate bytes remain unchanged. Later
+rejection blocks export; archival retry cannot restore it. 467 non-PostgreSQL and
+twelve isolated PostgreSQL tests passed, including real HTTP/Engine 3 consumption,
+populated upgrade and actual eligible-release restart. The fresh-loader Engine 3
+seam rejects experimental/wrong-scope envelopes and non-synthetic snapshot metadata.
+Only benchmark fake policy exists; this family is still unsupported by Engine 3.
+Legacy experimental migration, broader verifier policy, registry/GUI controls and
+release provenance in analysis reports remain open. P8.2 is not complete; ADR-015.
+
+**Assessment checkpoint:** a pure policy plus explicit local GET reads current
+rechecked quality/verifier/latest scoped history under the shared transaction lock.
+58 policy and seven API/repository tests were added; the backend checkpoint is
+444 passing non-PostgreSQL tests plus eleven isolated PostgreSQL tests. Real
+HTTP scope/decision/channel behavior passed; restart reproduced blocked readiness.
+Only explicit benchmark fake policy exists; real/lab policy fails closed.
+This is not publication/export enforcement: legacy experimental writes still
+use their earlier path. Durable scoped releases, Engine 3 export integration and
+release restart proof remain required. See ADR-014; P8.2 remains open.
+
+**Preceding review GUI checkpoint:** the dossier supports scoped latest history
+and confirmed exact-input decisions against the local review API, without a
+browser identity field. Missing/disabled states are read-only, uncertain writes
+retry unchanged keys, and stale conflicts require reload. Component tests cover
+these states; the real local portal/API/database flow recorded a synthetic-scope
+revision and read it after reload. Stable/export eligibility is still explicitly
+not evaluated; P8.2 remains open.
 
 **Description:** Centralize experimental/stable eligibility and make Engine 3 export call that policy.
 

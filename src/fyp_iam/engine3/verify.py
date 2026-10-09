@@ -56,7 +56,7 @@ def build_attack_path(
             AttackHop(
                 position=position,
                 edge_id=edge.edge_id,
-                required_action=edge.edge_type.value,
+                required_action=edge.iam_action or edge.edge_type.value,
                 resource=edge.target_id,
                 effect=edge.effect,
                 condition_keys=sorted(edge.condition_summary),

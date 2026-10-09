@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import asyncio
 import hashlib
 import json
 from datetime import UTC, datetime
@@ -15,8 +16,6 @@ from fyp_iam.core.ids import stable_id
 from fyp_iam.engine1.foundry.adapters import assemble_snapshot
 from fyp_iam.engine1.foundry.compiler import (
     OPTIONAL_VALIDATOR_NAMES,
-    EntityDraft,
-    RelationDraft,
     Snapshot,
     compile_snapshot,
 )
@@ -45,6 +44,7 @@ from fyp_iam.engine1.foundry.models import (
 from fyp_iam.engine1.foundry.pipeline import PARSER, present
 from fyp_iam.engine1.foundry.quality import QualityReport
 from fyp_iam.engine1.foundry.quality_store import read_latest_quality_report, write_quality_report
+from fyp_iam.engine1.foundry.verifier_store import read_latest_verifier_summary
 from fyp_iam.engine1.workbench.errors import DatabaseUnavailable
 
 _NOW = datetime(2026, 10, 3, tzinfo=UTC)
@@ -54,7 +54,10 @@ class FoundryRunInProgress(Exception):
     """Another transaction already owns the foundry run lock."""
 
 
-def persist_foundry(url: str) -> dict[str, object]:
+def persist_foundry(url: str, *, verify_inputs: bool = True) -> dict[str, object]:
+    # Keep the old opt-in keyword compatible, but never permit an unbound new run.
+    if not verify_inputs:
+        raise DatabaseUnavailable("Exact verifier inputs are required for new foundry runs")
     if not url or url.startswith("sqlite"):
         raise DatabaseUnavailable("PostgreSQL is required for foundry persistence")
     snapshot = assemble_snapshot()
@@ -109,8 +112,11 @@ def persist_foundry(url: str) -> dict[str, object]:
             if not already:
                 _write_graph(session, pipeline_id, version_ids, snapshot)
             session.flush()
-            stored = _read_snapshot(session)
-            compiled = compile_snapshot(stored)
+            from fyp_iam.engine1.foundry.snapshot_store import read_version_snapshot
+            from fyp_iam.engine1.foundry.verifier_pipeline import compile_verified_snapshot
+
+            stored = read_version_snapshot(session, version_ids)
+            compiled = asyncio.run(compile_verified_snapshot(stored))
             overview = present(snapshot, compiled, persisted=True, storage="postgres")
             run = _object(overview["run"])
             if already:
@@ -118,6 +124,16 @@ def persist_foundry(url: str) -> dict[str, object]:
                 run["unchanged_count"] = len(snapshot.sources)
             if not already:
                 _write_compiled(session, overview)
+            from fyp_iam.engine1.foundry.verifier_pipeline import build_verifier_request
+            from fyp_iam.engine1.foundry.verifier_store import write_verifier_packet
+
+            write_verifier_packet(
+                session,
+                build_verifier_request(stored, compiled),
+                _object(compiled["ai_verification"]),
+                pipeline_id,
+                run_started,
+            )
             _write_validations(session, overview, run_started)
             session.flush()
             write_quality_report(
@@ -280,8 +296,9 @@ def read_rule(url: str, version_id: str) -> dict[str, object] | None:
             rule = json.loads(version.rule_json)
             try:
                 quality = read_latest_quality_report(session, version)
+                verifier = read_latest_verifier_summary(session, version)
             except ValueError:
-                raise DatabaseUnavailable("Stored quality report could not be verified") from None
+                raise DatabaseUnavailable("Stored rule assurance could not be verified") from None
             return {
                 "rule_id": rule["rule_id"] if isinstance(rule, dict) else version.version_id,
                 "version_id": version.version_id,
@@ -311,6 +328,7 @@ def read_rule(url: str, version_id: str) -> dict[str, object] | None:
                 "publication": None if publication is None else {"channel": publication.channel},
                 "scenarios": scenarios,
                 "quality_report": quality.model_dump(mode="json") if quality else None,
+                "verifier_record": verifier.model_dump(mode="json") if verifier else None,
             }
     finally:
         engine.dispose()
@@ -780,41 +798,6 @@ def _write_validations(
         )
 
 
-def _read_snapshot(session: Session) -> Snapshot:
-    stored = session.scalars(select(NormalizedEntityRow)).all()
-    native_by_id = {row.entity_id: row.native_id for row in stored}
-    entities = tuple(
-        EntityDraft(
-            entity_type=row.entity_type,
-            native_id=row.native_id,
-            name=row.name,
-            source_key="",
-            attributes=_json_object(row.attributes_json),
-        )
-        for row in stored
-    )
-    relations = tuple(
-        RelationDraft(
-            from_native_id=native_by_id[row.from_entity_id],
-            to_native_id=native_by_id[row.to_entity_id],
-            relation_type=row.relation_type,
-            mapping_method=row.mapping_method,
-            mapping_confidence=row.mapping_confidence,
-            review_state=row.review_state,
-            rationale=row.rationale,
-        )
-        for row in session.scalars(select(EvidenceRelationRow)).all()
-    )
-    return Snapshot(
-        sources=(),
-        failures=(),
-        entities=entities,
-        claims=(),
-        relations=relations,
-        payloads={},
-    )
-
-
 def _write_compiled(session: Session, overview: dict[str, object]) -> None:
     stored = session.scalars(select(NormalizedEntityRow)).all()
     native_by_id = {row.entity_id: row.native_id for row in stored}
@@ -826,13 +809,6 @@ def _write_compiled(session: Session, overview: dict[str, object]) -> None:
     entities = {row.native_id: row for row in stored}
     primitive_ids = _primitives(session, overview, relation_ids)
     _candidate(session, overview, entities, primitive_ids)
-
-
-def _json_object(value: str) -> dict[str, object]:
-    parsed = json.loads(value)
-    if not isinstance(parsed, dict):
-        return {}
-    return {str(key): item for key, item in parsed.items()}
 
 
 def _object(value: object) -> dict[str, object]:

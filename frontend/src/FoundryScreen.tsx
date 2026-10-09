@@ -68,7 +68,7 @@ export function FoundryScreen({
           </span>
           <span className="product-name">
             <strong>Evidence Foundry</strong>
-            <small>IAM / Engine 01</small>
+            <small>One account · two identities</small>
           </span>
         </a>
 
@@ -109,7 +109,7 @@ export function FoundryScreen({
 
         <header className="foundry-header">
           <div className="header-copy">
-            <p className="section-code">EVIDENCE CONTROL / ENGINE 01</p>
+            <p className="section-code">{page === "investigate" ? "IAM ANALYSIS / SYNTHETIC BENCHMARK" : "EVIDENCE CONTROL / ENGINE 01"}</p>
             <h1 ref={headingRef} tabIndex={-1}>{pageInfo?.title ?? "Workspace not found"}</h1>
             <p>{pageInfo?.description ?? "This workspace address does not exist. Use the navigation to open a supported page."}</p>
             <div className="scope-list" aria-label="Foundry scope">
@@ -120,7 +120,7 @@ export function FoundryScreen({
           </div>
           <div className="header-control">
             <StatusTag value={previewMode ? "offline_preview" : overview.run?.status ?? overview.registry} />
-            <button
+            {page !== "investigate" ? <button
               className="primary-action"
               type="button"
               onClick={onRun}
@@ -129,14 +129,24 @@ export function FoundryScreen({
             >
               <FoundryIcon name="run" />
               <span>{previewMode ? isRunning ? "Recomputing preview" : "Recompute preview" : isRunning ? "Running evidence pipeline" : "Run evidence pipeline"}</span>
-            </button>
+            </button> : null}
             {!registryAvailable ? (
               <small id="run-disabled-reason">Restore the registry connection to run.</small>
             ) : null}
           </div>
         </header>
 
-        {previewMode ? (
+        {page === "overview" ? (
+          <ol className="analyst-pass" aria-label="One analyst pass">
+            <li><strong>This click</strong> Recompute the pinned evidence. Nothing is published.</li>
+            <li><strong>Human gate</strong> A person accepts one exact rule version.</li>
+            <li><strong>Timeline</strong> Compare two identities on one snapshot.</li>
+            <li><strong>Nexus event</strong> A branch is a possibility. Unknown stays unknown.</li>
+            <li><strong>Handoff</strong> IT receives a redacted report only after review.</li>
+          </ol>
+        ) : null}
+
+        {previewMode && page !== "investigate" ? (
           <div className="preview-banner" role="status">
             <span className="preview-label">OFFLINE PREVIEW</span>
             <span>Pinned local evidence only. No Supabase connection, database writes, approval, or rule publication. Candidate results show eligibility, not a released rule.</span>
@@ -165,7 +175,7 @@ export function FoundryScreen({
           </div>
         ) : null}
 
-        <section className="posture-strip" aria-label="Foundry security posture">
+        {page !== "investigate" ? <section className="posture-strip" aria-label="Foundry security posture">
           <article>
             <span>Source integrity</span>
             <strong>{sourceSucceeded}/{activeSources}</strong>
@@ -186,13 +196,13 @@ export function FoundryScreen({
             <strong>{rule?.publication?.channel ?? "gated"}</strong>
             <small>{overview.candidates.length} immutable version</small>
           </article>
-        </section>
+        </section> : null}
 
         {page === "not-found" ? (
           <section className="control-panel"><h2>Choose a supported workspace</h2><a className="workspace-link" href="#/overview">Return to overview</a></section>
         ) : page === "architecture" ? (
           <ArchitecturePage />
-        ) : !registryAvailable ? (
+        ) : !registryAvailable && page !== "investigate" ? (
           <RegistryUnavailable overview={overview} />
         ) : (
           <FoundryPageContent page={page} overview={overview} rule={rule} onOpen={onOpen} />

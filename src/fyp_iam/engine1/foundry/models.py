@@ -354,6 +354,28 @@ class QualityObservationRow(Base):
     report_json: Mapped[str] = mapped_column(Text)
 
 
+class VerifierPacketRow(Base):
+    """Append-only application record of one exact request/result in a run."""
+
+    __tablename__ = "verifier_packets"
+    __table_args__ = (
+        UniqueConstraint(
+            "pipeline_run_id", "request_hash", "response_hash", name="uq_verifier_run_binding"
+        ),
+        CheckConstraint("octet_length(request_json) <= 65536", name="ck_verifier_request_size"),
+        CheckConstraint("octet_length(response_json) <= 262144", name="ck_verifier_response_size"),
+    )
+
+    packet_id: Mapped[str] = mapped_column(String(80), primary_key=True)
+    pipeline_run_id: Mapped[str] = mapped_column(ForeignKey("pipeline_runs.run_id"))
+    rule_version_id: Mapped[str] = mapped_column(ForeignKey("rule_versions.version_id"))
+    request_hash: Mapped[str] = mapped_column(String(80))
+    response_hash: Mapped[str] = mapped_column(String(80))
+    request_json: Mapped[str] = mapped_column(Text)
+    response_json: Mapped[str] = mapped_column(Text)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
+
+
 class AIVerificationRow(Base):
     __tablename__ = "ai_verifications"
     __table_args__ = (
@@ -385,6 +407,44 @@ class ReviewDecisionRow(Base):
     decision: Mapped[str] = mapped_column(String(32))
     comment: Mapped[str] = mapped_column(Text)
     decided_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
+
+
+class ScopedReviewRow(Base):
+    """Bound reviews; legacy review_decisions are not upgraded by inference."""
+
+    __tablename__ = "scoped_reviews"
+    __table_args__ = (
+        UniqueConstraint("request_id"),
+        CheckConstraint("octet_length(record_json) <= 16384", name="ck_scoped_review_size"),
+        Index("ix_scoped_review_version_scope", "rule_version_id", "scope", "decided_at"),
+    )
+
+    decision_id: Mapped[str] = mapped_column(String(80), primary_key=True)
+    request_id: Mapped[str] = mapped_column(String(80))
+    rule_version_id: Mapped[str] = mapped_column(ForeignKey("rule_versions.version_id"))
+    scope: Mapped[str] = mapped_column(String(32))
+    record_json: Mapped[str] = mapped_column(Text)
+    record_hash: Mapped[str] = mapped_column(String(80))
+    decided_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
+
+
+class StableReleaseRow(Base):
+    """Scoped stable history; legacy publications never imply scoped approval."""
+
+    __tablename__ = "stable_releases"
+    __table_args__ = (
+        UniqueConstraint("request_id"),
+        CheckConstraint("octet_length(record_json) <= 131072", name="ck_stable_release_size"),
+    )
+
+    release_id: Mapped[str] = mapped_column(String(80), primary_key=True)
+    request_id: Mapped[str] = mapped_column(String(80))
+    rule_version_id: Mapped[str] = mapped_column(ForeignKey("rule_versions.version_id"))
+    review_decision_id: Mapped[str] = mapped_column(ForeignKey("scoped_reviews.decision_id"))
+    scope: Mapped[str] = mapped_column(String(32))
+    record_json: Mapped[str] = mapped_column(Text)
+    record_hash: Mapped[str] = mapped_column(String(80))
+    published_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
 
 
 class PublicationRow(Base):

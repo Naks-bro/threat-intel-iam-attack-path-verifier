@@ -10,11 +10,13 @@ from fyp_iam.contracts.models import (
     ContractModel,
     DiscoveryLimits,
     IAMGraphSnapshot,
+    IdStr,
     RuleStatus,
     ensure_utc,
 )
 from fyp_iam.core.report import AnalysisReport
 from fyp_iam.engine1.foundry.quality import QualityReport
+from fyp_iam.engine1.foundry.verifier_models import VerifierRecordSummary
 from fyp_iam.engine1.models import ApprovalEvent, NormalizedTechnique
 from fyp_iam.engine2.coverage import NormalizationCoverage
 from fyp_iam.engine2.records import SyntheticAccount
@@ -23,6 +25,7 @@ from fyp_iam.engine2.records import SyntheticAccount
 class AnalyzeRequest(ContractModel):
     rules: list[ApprovedRule] = Field(max_length=100)
     snapshot: IAMGraphSnapshot
+    start_node_id: IdStr | None = None
     limits: DiscoveryLimits | None = None
     condition_resolutions: dict[str, ConditionResolution] = Field(default_factory=dict)
     evaluated_at: datetime | None = None
@@ -38,6 +41,7 @@ class AnalyzeRequest(ContractModel):
 class SyntheticAnalyzeRequest(ContractModel):
     rules: list[ApprovedRule] = Field(min_length=1, max_length=100)
     account: SyntheticAccount
+    start_node_id: IdStr | None = None
     limits: DiscoveryLimits | None = None
     condition_resolutions: dict[str, ConditionResolution] = Field(default_factory=dict)
     evaluated_at: datetime | None = None
@@ -200,9 +204,20 @@ class FoundryRuleResponse(ContractModel):
     publication: FoundryPublication | None
     scenarios: list[FoundryScenario]
     quality_report: QualityReport | None = None
+    verifier_record: VerifierRecordSummary | None = None
 
     @model_validator(mode="after")
     def quality_matches_version(self) -> "FoundryRuleResponse":
+        verifier = self.verifier_record
+        if verifier is not None and (
+            verifier.rule_version_id != self.version_id
+            or verifier.rule_semantic_hash != self.semantic_hash
+            or (
+                self.quality_report is not None
+                and verifier.evidence_snapshot_hash != self.quality_report.evidence_snapshot_hash
+            )
+        ):
+            raise ValueError("verifier record binding does not match the rule version")
         report = self.quality_report
         if report is not None and (
             report.rule_version_id != self.version_id

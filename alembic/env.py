@@ -6,6 +6,7 @@ from alembic import context
 from sqlalchemy import engine_from_config, pool, text
 
 from fyp_iam.engine1.foundry.models import Base
+from fyp_iam.engine2.schema import metadata as inventory_metadata
 from fyp_iam.persistence.redact import install_redaction
 from fyp_iam.persistence.urls import migration_database_url, prepare_url
 
@@ -14,7 +15,7 @@ if config.config_file_name is not None:
     fileConfig(config.config_file_name)
 install_redaction()
 
-target_metadata = Base.metadata
+target_metadata = [Base.metadata, inventory_metadata]
 
 
 def _url() -> str:

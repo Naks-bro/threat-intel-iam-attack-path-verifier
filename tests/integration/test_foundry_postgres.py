@@ -27,6 +27,91 @@ from fyp_iam.engine1.foundry.store import (
 pytestmark = pytest.mark.postgres
 
 
+def test_bound_verifier_run_retains_request_and_response() -> None:
+    from fyp_iam.engine1.foundry.models import VerifierPacketRow
+    from fyp_iam.engine1.foundry.verifier_store import read_latest_verifier_packet
+
+    url = os.environ["FYP_DATABASE_URL"]
+    first = persist_foundry(url, verify_inputs=True)
+    second = persist_foundry(url, verify_inputs=True)
+    assert first["candidate"] == second["candidate"]
+    assert first["ai_verification"] == second["ai_verification"]
+    assert second["run"]["unchanged_count"] == 3
+    engine = create_engine(url)
+    try:
+        with Session(engine) as session:
+            version = session.get(RuleVersionRow, first["candidate"]["version_id"])
+            assert version is not None
+            restored = read_latest_verifier_packet(session, version)
+            assert restored is not None
+            assert restored["response"] == second["ai_verification"]
+            assert len(restored["request"]["evidence"]) == 3
+            assert session.scalar(select(func.count()).select_from(VerifierPacketRow)) >= 2
+    finally:
+        engine.dispose()
+    from fastapi.testclient import TestClient
+
+    from fyp_iam.api.app import create_app
+
+    with TestClient(create_app(database_url=url)) as client:
+        response = client.get(f"/v1/foundry/rules/{first['candidate']['version_id']}")
+    assert response.status_code == 200
+    summary = response.json()["verifier_record"]
+    assert summary["request_hash"] == first["ai_verification"]["request_hash"]
+    assert summary["response_hash"] == first["ai_verification"]["response_hash"]
+    assert len(summary["evidence"]) == 3
+    assert all("text" not in item for item in summary["evidence"])
+
+
+def test_normal_api_run_retains_binding_and_rolls_back_corrupt_inputs() -> None:
+    from fastapi.testclient import TestClient
+
+    from fyp_iam.api.app import create_app
+    from fyp_iam.engine1.foundry.models import VerifierPacketRow
+
+    url = os.environ["FYP_DATABASE_URL"]
+    engine = create_engine(url)
+    original = None
+    artifact_id = None
+    try:
+        with TestClient(create_app(database_url=url)) as client:
+            response = client.post("/v1/foundry/runs")
+            assert response.status_code == 200
+            version_id = response.json()["candidates"][0]["version_id"]
+            dossier = client.get(f"/v1/foundry/rules/{version_id}")
+            assert dossier.status_code == 200
+            record = dossier.json()["verifier_record"]
+            assert record is not None and record["provider"] == "fake"
+            assert len(record["evidence"]) == 3
+            with Session(engine) as session, session.begin():
+                packet_count = session.scalar(select(func.count()).select_from(VerifierPacketRow))
+                run_count = session.scalar(select(func.count()).select_from(PipelineRunRow))
+                artifact = session.scalar(select(RawArtifactRow).limit(1))
+                assert artifact is not None
+                artifact_id, original = artifact.artifact_id, artifact.payload
+                artifact.payload = b"corrupt verifier source"
+            failed = client.post("/v1/foundry/runs")
+            assert failed.status_code == 503
+            assert failed.json()["detail"] == "database_unavailable"
+            assert "corrupt verifier source" not in failed.text
+            with Session(engine) as session:
+                assert (
+                    session.scalar(select(func.count()).select_from(VerifierPacketRow))
+                    == packet_count
+                )
+                assert session.scalar(select(func.count()).select_from(PipelineRunRow)) == run_count
+            retained = client.get(f"/v1/foundry/rules/{version_id}")
+            assert retained.status_code == 200
+            assert retained.json()["verifier_record"] == record
+    finally:
+        if artifact_id is not None:
+            with Session(engine) as session, session.begin():
+                artifact = session.get(RawArtifactRow, artifact_id)
+                assert artifact is not None
+                artifact.payload = original
+        engine.dispose()
+
+
 def test_experimental_rule_is_stored_once(monkeypatch: pytest.MonkeyPatch) -> None:
     url = os.environ.get("FYP_DATABASE_URL", "").strip()
     if not url:

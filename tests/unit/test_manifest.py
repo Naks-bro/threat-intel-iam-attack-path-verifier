@@ -18,7 +18,7 @@ def test_local_fixture_manifest_is_stable(fixture_dir: Path) -> None:
     assert first.random_seed == "not_used"
     assert first.simulator_status == "not_run"
     assert first.sandbox_status == "not_mapped"
-    assert first.supported_by_fixture == 3
+    assert first.supported_by_fixture == 4
     assert first.denied_by_fixture == 1
     assert first.inconclusive == 1
     assert first.no_finding == 1

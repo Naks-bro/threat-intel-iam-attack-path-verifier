@@ -28,6 +28,9 @@ def _apply(path: Path) -> None:
             continue
         key, value = line.split("=", 1)
         key = key.strip()
+        # Local review enablement must come from the operator process, not DB config.
+        if key == "FYP_LOCAL_REVIEWER_ALIAS":
+            continue
         if not key or key in os.environ:
             continue
         os.environ[key] = value.strip().strip('"').strip("'")
