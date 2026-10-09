@@ -1,0 +1,877 @@
+{
+  "collection_sha256": "sha256:dc1639caa5501d720e280cf1cbd8fbe009884a0c9b3e6e9ed9d0c25166c3d8f4",
+  "collection_url": "https://raw.githubusercontent.com/mitre-attack/attack-stix-data/master/enterprise-attack/enterprise-attack-19.2.json",
+  "dataset_id": "mitre-enterprise-cloud-50",
+  "license_note": "Identifiers and names cite MITRE ATT&CK Enterprise 19.2. Technique descriptions were not copied. Runtime code does not download this file.",
+  "records": [
+    {
+      "external_id": "T1020.001",
+      "name": "Traffic Duplication",
+      "platforms": [
+        "IaaS",
+        "Network Devices"
+      ],
+      "stix_id": "attack-pattern--7c46b364-8496-4234-8a56-f7e6727e21e1",
+      "tactics": [
+        "exfiltration"
+      ],
+      "official_reference": "https://attack.mitre.org/techniques/T1020/001/"
+    },
+    {
+      "external_id": "T1021",
+      "name": "Remote Services",
+      "platforms": [
+        "ESXi",
+        "IaaS",
+        "Linux",
+        "Windows",
+        "macOS"
+      ],
+      "stix_id": "attack-pattern--54a649ff-439a-41a4-9856-8d144a2551ba",
+      "tactics": [
+        "lateral-movement"
+      ],
+      "official_reference": "https://attack.mitre.org/techniques/T1021/"
+    },
+    {
+      "external_id": "T1021.007",
+      "name": "Cloud Services",
+      "platforms": [
+        "IaaS",
+        "Identity Provider",
+        "Office Suite",
+        "SaaS"
+      ],
+      "stix_id": "attack-pattern--8861073d-d1b8-4941-82ce-dce621d398f0",
+      "tactics": [
+        "lateral-movement"
+      ],
+      "official_reference": "https://attack.mitre.org/techniques/T1021/007/"
+    },
+    {
+      "external_id": "T1021.008",
+      "name": "Direct Cloud VM Connections",
+      "platforms": [
+        "IaaS"
+      ],
+      "stix_id": "attack-pattern--45241b9e-9bbc-4826-a2cc-78855e51ca09",
+      "tactics": [
+        "lateral-movement"
+      ],
+      "official_reference": "https://attack.mitre.org/techniques/T1021/008/"
+    },
+    {
+      "external_id": "T1036.010",
+      "name": "Masquerade Account Name",
+      "platforms": [
+        "Containers",
+        "IaaS",
+        "Identity Provider",
+        "Linux",
+        "Office Suite",
+        "SaaS",
+        "Windows",
+        "macOS"
+      ],
+      "stix_id": "attack-pattern--d349c66e-18e1-4d8b-a2d7-65af7cbd2ba0",
+      "tactics": [
+        "stealth"
+      ],
+      "official_reference": "https://attack.mitre.org/techniques/T1036/010/"
+    },
+    {
+      "external_id": "T1040",
+      "name": "Network Sniffing",
+      "platforms": [
+        "IaaS",
+        "Linux",
+        "Network Devices",
+        "Windows",
+        "macOS"
+      ],
+      "stix_id": "attack-pattern--3257eb21-f9a7-4430-8de1-d8b6e288f529",
+      "tactics": [
+        "credential-access",
+        "discovery"
+      ],
+      "official_reference": "https://attack.mitre.org/techniques/T1040/"
+    },
+    {
+      "external_id": "T1046",
+      "name": "Network Service Discovery",
+      "platforms": [
+        "Containers",
+        "IaaS",
+        "Linux",
+        "Network Devices",
+        "Windows",
+        "macOS"
+      ],
+      "stix_id": "attack-pattern--e3a12395-188d-4051-9a16-ea8e14d07b88",
+      "tactics": [
+        "discovery"
+      ],
+      "official_reference": "https://attack.mitre.org/techniques/T1046/"
+    },
+    {
+      "external_id": "T1048",
+      "name": "Exfiltration Over Alternative Protocol",
+      "platforms": [
+        "ESXi",
+        "IaaS",
+        "Linux",
+        "Network Devices",
+        "Office Suite",
+        "SaaS",
+        "Windows",
+        "macOS"
+      ],
+      "stix_id": "attack-pattern--a19e86f8-1c0a-4fea-8407-23b73d615776",
+      "tactics": [
+        "exfiltration"
+      ],
+      "official_reference": "https://attack.mitre.org/techniques/T1048/"
+    },
+    {
+      "external_id": "T1049",
+      "name": "System Network Connections Discovery",
+      "platforms": [
+        "ESXi",
+        "IaaS",
+        "Linux",
+        "Network Devices",
+        "Windows",
+        "macOS"
+      ],
+      "stix_id": "attack-pattern--7e150503-88e7-4861-866b-ff1ac82c4475",
+      "tactics": [
+        "discovery"
+      ],
+      "official_reference": "https://attack.mitre.org/techniques/T1049/"
+    },
+    {
+      "external_id": "T1059",
+      "name": "Command and Scripting Interpreter",
+      "platforms": [
+        "Containers",
+        "ESXi",
+        "IaaS",
+        "Identity Provider",
+        "Linux",
+        "Network Devices",
+        "Office Suite",
+        "SaaS",
+        "Windows",
+        "macOS"
+      ],
+      "stix_id": "attack-pattern--7385dfaf-6886-4229-9ecd-6fd678040830",
+      "tactics": [
+        "execution"
+      ],
+      "official_reference": "https://attack.mitre.org/techniques/T1059/"
+    },
+    {
+      "external_id": "T1059.009",
+      "name": "Cloud API",
+      "platforms": [
+        "IaaS",
+        "Identity Provider",
+        "Office Suite",
+        "SaaS"
+      ],
+      "stix_id": "attack-pattern--55bb4471-ff1f-43b4-88c1-c9384ec47abf",
+      "tactics": [
+        "execution"
+      ],
+      "official_reference": "https://attack.mitre.org/techniques/T1059/009/"
+    },
+    {
+      "external_id": "T1069",
+      "name": "Permission Groups Discovery",
+      "platforms": [
+        "Containers",
+        "IaaS",
+        "Identity Provider",
+        "Linux",
+        "Office Suite",
+        "SaaS",
+        "Windows",
+        "macOS"
+      ],
+      "stix_id": "attack-pattern--15dbf668-795c-41e6-8219-f0447c0e64ce",
+      "tactics": [
+        "discovery"
+      ],
+      "official_reference": "https://attack.mitre.org/techniques/T1069/"
+    },
+    {
+      "external_id": "T1069.003",
+      "name": "Cloud Groups",
+      "platforms": [
+        "IaaS",
+        "Identity Provider",
+        "Office Suite",
+        "SaaS"
+      ],
+      "stix_id": "attack-pattern--16e94db9-b5b1-4cd0-b851-f38fbd0a70f2",
+      "tactics": [
+        "discovery"
+      ],
+      "official_reference": "https://attack.mitre.org/techniques/T1069/003/"
+    },
+    {
+      "external_id": "T1074",
+      "name": "Data Staged",
+      "platforms": [
+        "ESXi",
+        "IaaS",
+        "Linux",
+        "Windows",
+        "macOS"
+      ],
+      "stix_id": "attack-pattern--7dd95ff6-712e-4056-9626-312ea4ab4c5e",
+      "tactics": [
+        "collection"
+      ],
+      "official_reference": "https://attack.mitre.org/techniques/T1074/"
+    },
+    {
+      "external_id": "T1074.002",
+      "name": "Remote Data Staging",
+      "platforms": [
+        "ESXi",
+        "IaaS",
+        "Linux",
+        "Windows",
+        "macOS"
+      ],
+      "stix_id": "attack-pattern--359b00ad-9425-420b-bba5-6de8d600cbc0",
+      "tactics": [
+        "collection"
+      ],
+      "official_reference": "https://attack.mitre.org/techniques/T1074/002/"
+    },
+    {
+      "external_id": "T1078",
+      "name": "Valid Accounts",
+      "platforms": [
+        "Containers",
+        "ESXi",
+        "IaaS",
+        "Identity Provider",
+        "Linux",
+        "Network Devices",
+        "Office Suite",
+        "SaaS",
+        "Windows",
+        "macOS"
+      ],
+      "stix_id": "attack-pattern--b17a1a56-e99c-403c-8948-561df0cffe81",
+      "tactics": [
+        "initial-access",
+        "persistence",
+        "privilege-escalation",
+        "stealth"
+      ],
+      "official_reference": "https://attack.mitre.org/techniques/T1078/"
+    },
+    {
+      "external_id": "T1078.001",
+      "name": "Default Accounts",
+      "platforms": [
+        "Containers",
+        "ESXi",
+        "IaaS",
+        "Identity Provider",
+        "Linux",
+        "Network Devices",
+        "Office Suite",
+        "SaaS",
+        "Windows",
+        "macOS"
+      ],
+      "stix_id": "attack-pattern--6151cbea-819b-455a-9fa6-99a1cc58797d",
+      "tactics": [
+        "initial-access",
+        "persistence",
+        "privilege-escalation",
+        "stealth"
+      ],
+      "official_reference": "https://attack.mitre.org/techniques/T1078/001/"
+    },
+    {
+      "external_id": "T1078.004",
+      "name": "Cloud Accounts",
+      "platforms": [
+        "IaaS",
+        "Identity Provider",
+        "Office Suite",
+        "SaaS"
+      ],
+      "stix_id": "attack-pattern--f232fa7a-025c-4d43-abc7-318e81a73d65",
+      "tactics": [
+        "initial-access",
+        "persistence",
+        "privilege-escalation",
+        "stealth"
+      ],
+      "official_reference": "https://attack.mitre.org/techniques/T1078/004/"
+    },
+    {
+      "external_id": "T1082",
+      "name": "System Information Discovery",
+      "platforms": [
+        "ESXi",
+        "IaaS",
+        "Linux",
+        "Network Devices",
+        "Windows",
+        "macOS"
+      ],
+      "stix_id": "attack-pattern--354a7f88-63fb-41b5-a801-ce3b377b36f1",
+      "tactics": [
+        "discovery"
+      ],
+      "official_reference": "https://attack.mitre.org/techniques/T1082/"
+    },
+    {
+      "external_id": "T1087",
+      "name": "Account Discovery",
+      "platforms": [
+        "ESXi",
+        "IaaS",
+        "Identity Provider",
+        "Linux",
+        "Office Suite",
+        "SaaS",
+        "Windows",
+        "macOS"
+      ],
+      "stix_id": "attack-pattern--72b74d71-8169-42aa-92e0-e7b04b9f5a08",
+      "tactics": [
+        "discovery"
+      ],
+      "official_reference": "https://attack.mitre.org/techniques/T1087/"
+    },
+    {
+      "external_id": "T1087.004",
+      "name": "Cloud Account",
+      "platforms": [
+        "IaaS",
+        "Identity Provider",
+        "Office Suite",
+        "SaaS"
+      ],
+      "stix_id": "attack-pattern--8f104855-e5b7-4077-b1f5-bc3103b41abe",
+      "tactics": [
+        "discovery"
+      ],
+      "official_reference": "https://attack.mitre.org/techniques/T1087/004/"
+    },
+    {
+      "external_id": "T1098",
+      "name": "Account Manipulation",
+      "platforms": [
+        "Containers",
+        "ESXi",
+        "IaaS",
+        "Identity Provider",
+        "Linux",
+        "Network Devices",
+        "Office Suite",
+        "SaaS",
+        "Windows",
+        "macOS"
+      ],
+      "stix_id": "attack-pattern--a10641f4-87b4-45a3-a906-92a149cb2c27",
+      "tactics": [
+        "persistence",
+        "privilege-escalation"
+      ],
+      "official_reference": "https://attack.mitre.org/techniques/T1098/"
+    },
+    {
+      "external_id": "T1098.001",
+      "name": "Additional Cloud Credentials",
+      "platforms": [
+        "IaaS",
+        "Identity Provider",
+        "SaaS"
+      ],
+      "stix_id": "attack-pattern--8a2f40cf-8325-47f9-96e4-b1ca4c7389bd",
+      "tactics": [
+        "persistence",
+        "privilege-escalation"
+      ],
+      "official_reference": "https://attack.mitre.org/techniques/T1098/001/"
+    },
+    {
+      "external_id": "T1098.003",
+      "name": "Additional Cloud Roles",
+      "platforms": [
+        "IaaS",
+        "Identity Provider",
+        "Office Suite",
+        "SaaS"
+      ],
+      "stix_id": "attack-pattern--2dbbdcd5-92cf-44c0-aea2-fe24783a6bc3",
+      "tactics": [
+        "persistence",
+        "privilege-escalation"
+      ],
+      "official_reference": "https://attack.mitre.org/techniques/T1098/003/"
+    },
+    {
+      "external_id": "T1098.004",
+      "name": "SSH Authorized Keys",
+      "platforms": [
+        "ESXi",
+        "IaaS",
+        "Linux",
+        "Network Devices",
+        "macOS"
+      ],
+      "stix_id": "attack-pattern--6b57dc31-b814-4a03-8706-28bc20d739c4",
+      "tactics": [
+        "persistence",
+        "privilege-escalation"
+      ],
+      "official_reference": "https://attack.mitre.org/techniques/T1098/004/"
+    },
+    {
+      "external_id": "T1110",
+      "name": "Brute Force",
+      "platforms": [
+        "Containers",
+        "ESXi",
+        "IaaS",
+        "Identity Provider",
+        "Linux",
+        "Network Devices",
+        "Office Suite",
+        "SaaS",
+        "Windows",
+        "macOS"
+      ],
+      "stix_id": "attack-pattern--a93494bb-4b80-4ea1-8695-3236a49916fd",
+      "tactics": [
+        "credential-access"
+      ],
+      "official_reference": "https://attack.mitre.org/techniques/T1110/"
+    },
+    {
+      "external_id": "T1110.001",
+      "name": "Password Guessing",
+      "platforms": [
+        "Containers",
+        "ESXi",
+        "IaaS",
+        "Identity Provider",
+        "Linux",
+        "Network Devices",
+        "Office Suite",
+        "SaaS",
+        "Windows",
+        "macOS"
+      ],
+      "stix_id": "attack-pattern--09c4c11e-4fa1-4f8c-8dad-3cf8e69ad119",
+      "tactics": [
+        "credential-access"
+      ],
+      "official_reference": "https://attack.mitre.org/techniques/T1110/001/"
+    },
+    {
+      "external_id": "T1110.003",
+      "name": "Password Spraying",
+      "platforms": [
+        "Containers",
+        "ESXi",
+        "IaaS",
+        "Identity Provider",
+        "Linux",
+        "Network Devices",
+        "Office Suite",
+        "SaaS",
+        "Windows",
+        "macOS"
+      ],
+      "stix_id": "attack-pattern--692074ae-bb62-4a5e-a735-02cb6bde458c",
+      "tactics": [
+        "credential-access"
+      ],
+      "official_reference": "https://attack.mitre.org/techniques/T1110/003/"
+    },
+    {
+      "external_id": "T1110.004",
+      "name": "Credential Stuffing",
+      "platforms": [
+        "Containers",
+        "ESXi",
+        "IaaS",
+        "Identity Provider",
+        "Linux",
+        "Network Devices",
+        "Office Suite",
+        "SaaS",
+        "Windows",
+        "macOS"
+      ],
+      "stix_id": "attack-pattern--b2d03cea-aec1-45ca-9744-9ee583c1e1cc",
+      "tactics": [
+        "credential-access"
+      ],
+      "official_reference": "https://attack.mitre.org/techniques/T1110/004/"
+    },
+    {
+      "external_id": "T1119",
+      "name": "Automated Collection",
+      "platforms": [
+        "IaaS",
+        "Linux",
+        "Office Suite",
+        "SaaS",
+        "Windows",
+        "macOS"
+      ],
+      "stix_id": "attack-pattern--30208d3e-0d6b-43c8-883e-44462a514619",
+      "tactics": [
+        "collection"
+      ],
+      "official_reference": "https://attack.mitre.org/techniques/T1119/"
+    },
+    {
+      "external_id": "T1136",
+      "name": "Create Account",
+      "platforms": [
+        "Containers",
+        "ESXi",
+        "IaaS",
+        "Identity Provider",
+        "Linux",
+        "Network Devices",
+        "Office Suite",
+        "SaaS",
+        "Windows",
+        "macOS"
+      ],
+      "stix_id": "attack-pattern--e01be9c5-e763-4caf-aeb7-000b416aef67",
+      "tactics": [
+        "persistence"
+      ],
+      "official_reference": "https://attack.mitre.org/techniques/T1136/"
+    },
+    {
+      "external_id": "T1136.003",
+      "name": "Cloud Account",
+      "platforms": [
+        "IaaS",
+        "Identity Provider",
+        "Office Suite",
+        "SaaS"
+      ],
+      "stix_id": "attack-pattern--a009cb25-4801-4116-9105-80a91cf15c1b",
+      "tactics": [
+        "persistence"
+      ],
+      "official_reference": "https://attack.mitre.org/techniques/T1136/003/"
+    },
+    {
+      "external_id": "T1190",
+      "name": "Exploit Public-Facing Application",
+      "platforms": [
+        "Containers",
+        "ESXi",
+        "IaaS",
+        "Linux",
+        "Network Devices",
+        "Windows",
+        "macOS"
+      ],
+      "stix_id": "attack-pattern--3f886f2a-874f-4333-b794-aa6075009b1c",
+      "tactics": [
+        "initial-access"
+      ],
+      "official_reference": "https://attack.mitre.org/techniques/T1190/"
+    },
+    {
+      "external_id": "T1199",
+      "name": "Trusted Relationship",
+      "platforms": [
+        "IaaS",
+        "Identity Provider",
+        "Linux",
+        "Office Suite",
+        "SaaS",
+        "Windows",
+        "macOS"
+      ],
+      "stix_id": "attack-pattern--9fa07bef-9c81-421e-a8e5-ad4366c5a925",
+      "tactics": [
+        "initial-access"
+      ],
+      "official_reference": "https://attack.mitre.org/techniques/T1199/"
+    },
+    {
+      "external_id": "T1201",
+      "name": "Password Policy Discovery",
+      "platforms": [
+        "IaaS",
+        "Identity Provider",
+        "Linux",
+        "Network Devices",
+        "Office Suite",
+        "SaaS",
+        "Windows",
+        "macOS"
+      ],
+      "stix_id": "attack-pattern--b6075259-dba3-44e9-87c7-e954f37ec0d5",
+      "tactics": [
+        "discovery"
+      ],
+      "official_reference": "https://attack.mitre.org/techniques/T1201/"
+    },
+    {
+      "external_id": "T1204",
+      "name": "User Execution",
+      "platforms": [
+        "Containers",
+        "IaaS",
+        "Linux",
+        "Windows",
+        "macOS"
+      ],
+      "stix_id": "attack-pattern--8c32eb4d-805f-4fc5-bf60-c4d476c131b5",
+      "tactics": [
+        "execution"
+      ],
+      "official_reference": "https://attack.mitre.org/techniques/T1204/"
+    },
+    {
+      "external_id": "T1204.003",
+      "name": "Malicious Image",
+      "platforms": [
+        "Containers",
+        "IaaS"
+      ],
+      "stix_id": "attack-pattern--b0c74ef9-c61e-4986-88cb-78da98a355ec",
+      "tactics": [
+        "execution"
+      ],
+      "official_reference": "https://attack.mitre.org/techniques/T1204/003/"
+    },
+    {
+      "external_id": "T1211",
+      "name": "Exploitation for Stealth",
+      "platforms": [
+        "IaaS",
+        "Linux",
+        "SaaS",
+        "Windows",
+        "macOS"
+      ],
+      "stix_id": "attack-pattern--fe926152-f431-4baf-956c-4ad3cb0bf23b",
+      "tactics": [
+        "stealth"
+      ],
+      "official_reference": "https://attack.mitre.org/techniques/T1211/"
+    },
+    {
+      "external_id": "T1213",
+      "name": "Data from Information Repositories",
+      "platforms": [
+        "IaaS",
+        "Linux",
+        "Office Suite",
+        "SaaS",
+        "Windows",
+        "macOS"
+      ],
+      "stix_id": "attack-pattern--d28ef391-8ed4-45dc-bc4a-2f43abf54416",
+      "tactics": [
+        "collection"
+      ],
+      "official_reference": "https://attack.mitre.org/techniques/T1213/"
+    },
+    {
+      "external_id": "T1213.006",
+      "name": "Databases",
+      "platforms": [
+        "IaaS",
+        "Linux",
+        "SaaS",
+        "Windows",
+        "macOS"
+      ],
+      "stix_id": "attack-pattern--248d3fe1-7fe1-4d71-91c7-8bb7ef35cad3",
+      "tactics": [
+        "collection"
+      ],
+      "official_reference": "https://attack.mitre.org/techniques/T1213/006/"
+    },
+    {
+      "external_id": "T1485",
+      "name": "Data Destruction",
+      "platforms": [
+        "Containers",
+        "ESXi",
+        "IaaS",
+        "Linux",
+        "Windows",
+        "macOS"
+      ],
+      "stix_id": "attack-pattern--d45a3d09-b3cf-48f4-9f0f-f521ee5cb05c",
+      "tactics": [
+        "impact"
+      ],
+      "official_reference": "https://attack.mitre.org/techniques/T1485/"
+    },
+    {
+      "external_id": "T1485.001",
+      "name": "Lifecycle-Triggered Deletion",
+      "platforms": [
+        "IaaS"
+      ],
+      "stix_id": "attack-pattern--1001e0d6-ee09-4dfc-aa90-e9320ffc8fe4",
+      "tactics": [
+        "impact"
+      ],
+      "official_reference": "https://attack.mitre.org/techniques/T1485/001/"
+    },
+    {
+      "external_id": "T1486",
+      "name": "Data Encrypted for Impact",
+      "platforms": [
+        "ESXi",
+        "IaaS",
+        "Linux",
+        "Windows",
+        "macOS"
+      ],
+      "stix_id": "attack-pattern--b80d107d-fa0d-4b60-9684-b0433e8bdba0",
+      "tactics": [
+        "impact"
+      ],
+      "official_reference": "https://attack.mitre.org/techniques/T1486/"
+    },
+    {
+      "external_id": "T1489",
+      "name": "Service Stop",
+      "platforms": [
+        "ESXi",
+        "IaaS",
+        "Linux",
+        "Windows",
+        "macOS"
+      ],
+      "stix_id": "attack-pattern--20fb2507-d71c-455d-9b6d-6104461cf26b",
+      "tactics": [
+        "impact"
+      ],
+      "official_reference": "https://attack.mitre.org/techniques/T1489/"
+    },
+    {
+      "external_id": "T1490",
+      "name": "Inhibit System Recovery",
+      "platforms": [
+        "Containers",
+        "ESXi",
+        "IaaS",
+        "Linux",
+        "Network Devices",
+        "Windows",
+        "macOS"
+      ],
+      "stix_id": "attack-pattern--f5d8eed6-48a9-4cdf-a3d7-d1ffa99c3d2a",
+      "tactics": [
+        "impact"
+      ],
+      "official_reference": "https://attack.mitre.org/techniques/T1490/"
+    },
+    {
+      "external_id": "T1491",
+      "name": "Defacement",
+      "platforms": [
+        "ESXi",
+        "IaaS",
+        "Linux",
+        "Windows",
+        "macOS"
+      ],
+      "stix_id": "attack-pattern--5909f20f-3c39-4795-be06-ef1ea40d350b",
+      "tactics": [
+        "impact"
+      ],
+      "official_reference": "https://attack.mitre.org/techniques/T1491/"
+    },
+    {
+      "external_id": "T1491.002",
+      "name": "External Defacement",
+      "platforms": [
+        "IaaS",
+        "Linux",
+        "Windows",
+        "macOS"
+      ],
+      "stix_id": "attack-pattern--0cfe31a7-81fc-472c-bc45-e2808d1066a3",
+      "tactics": [
+        "impact"
+      ],
+      "official_reference": "https://attack.mitre.org/techniques/T1491/002/"
+    },
+    {
+      "external_id": "T1496",
+      "name": "Resource Hijacking",
+      "platforms": [
+        "Containers",
+        "IaaS",
+        "Linux",
+        "SaaS",
+        "Windows",
+        "macOS"
+      ],
+      "stix_id": "attack-pattern--cd25c1b4-935c-4f0e-ba8d-552f28bc4783",
+      "tactics": [
+        "impact"
+      ],
+      "official_reference": "https://attack.mitre.org/techniques/T1496/"
+    },
+    {
+      "external_id": "T1496.001",
+      "name": "Compute Hijacking",
+      "platforms": [
+        "Containers",
+        "IaaS",
+        "Linux",
+        "Windows",
+        "macOS"
+      ],
+      "stix_id": "attack-pattern--a718a0c8-5768-41a1-9958-a1cc3f995e99",
+      "tactics": [
+        "impact"
+      ],
+      "official_reference": "https://attack.mitre.org/techniques/T1496/001/"
+    },
+    {
+      "external_id": "T1496.002",
+      "name": "Bandwidth Hijacking",
+      "platforms": [
+        "Containers",
+        "IaaS",
+        "Linux",
+        "Windows",
+        "macOS"
+      ],
+      "stix_id": "attack-pattern--718cb208-6446-4572-a2f0-9c799c60091e",
+      "tactics": [
+        "impact"
+      ],
+      "official_reference": "https://attack.mitre.org/techniques/T1496/002/"
+    }
+  ],
+  "retrieved_at": "2026-10-02T17:19:56Z",
+  "schema_version": "0.1",
+  "selection": "Not-revoked Enterprise attack-pattern objects with platform IaaS, then SaaS, Office 365, Google Workspace, Azure AD, Identity Provider, or Containers. Sorted by technique id and limited to 50. Available IaaS rows: 104. Other cloud rows: 48.",
+  "source_name": "mitre-attack",
+  "source_version": "19.2",
+  "collection_modified": "2026-08-05T21:33:58.496Z"
+}

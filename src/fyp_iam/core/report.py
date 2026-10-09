@@ -8,6 +8,7 @@ from fyp_iam.contracts.models import (
     DiscoveryLimits,
     Finding,
     IdStr,
+    RuleRef,
     VerificationResult,
 )
 
@@ -21,6 +22,10 @@ class AnalysisIssue(ContractModel):
 class AnalysisReport(ContractModel):
     schema_version: str = Field(pattern=r"^0\.1$")
     snapshot_id: IdStr
+    graph_input_digest: str = Field(pattern=r"^sha256:[0-9a-f]{64}$")
+    start_node_id: IdStr | None = None
+    input_rule_refs: list[RuleRef] = Field(default_factory=list)
+    input_rule_digest: str = Field(pattern=r"^sha256:[0-9a-f]{64}$")
     findings: list[Finding]
     attack_paths: list[AttackPath]
     verifications: list[VerificationResult]

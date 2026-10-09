@@ -5,18 +5,18 @@ from dataclasses import dataclass
 
 from fyp_iam.contracts.models import (
     ApprovedRule,
+    AuthorizationEffect,
     DiscoveryLimits,
     EdgeType,
     GraphEdge,
     GraphNode,
     IAMGraphSnapshot,
     NodeType,
-    PatternStep,
 )
 from fyp_iam.core.clock import Clock
 
 _NODE_TYPE_NAMES = {item.value for item in NodeType}
-_SUPPORTED_PRECONDITIONS = frozenset({"role_trusts_service"})
+_SUPPORTED_PRECONDITIONS = frozenset({"role_trusts_service", "target_is_iam_user"})
 
 
 @dataclass(frozen=True)
@@ -40,7 +40,12 @@ class DiscoveryBatch:
 
 def unsupported_precondition_types(rule: ApprovedRule) -> list[str]:
     return sorted(
-        {item.type for item in rule.preconditions if item.type not in _SUPPORTED_PRECONDITIONS}
+        {
+            item.type
+            for item in rule.preconditions
+            if item.type not in _SUPPORTED_PRECONDITIONS
+            or (item.type == "target_is_iam_user" and item.value != "iam_user")
+        }
     )
 
 
@@ -61,6 +66,8 @@ def discover_bound_walks(
     rule: ApprovedRule,
     limits: DiscoveryLimits,
     clock: Clock,
+    *,
+    start_node_id: str | None = None,
 ) -> DiscoveryBatch:
     pattern = rule.path_pattern
     if len(pattern) > limits.max_hops:
@@ -70,8 +77,13 @@ def discover_bound_walks(
     edges_by_id = {edge.edge_id: edge for edge in snapshot.edges}
     allowed = frozenset(step.relationship for step in pattern)
     adjacency = _adjacency(snapshot, allowed)
+    if start_node_id is not None and start_node_id not in nodes_by_id:
+        raise ValueError("starting identity is not in the snapshot")
     starts = sorted(
-        node.node_id for node in snapshot.nodes if node_matches_role(pattern[0].from_role, node)
+        node.node_id
+        for node in snapshot.nodes
+        if (start_node_id is None or node.node_id == start_node_id)
+        and node_matches_role(pattern[0].from_role, node)
     )
 
     found: list[BoundWalk] = []
@@ -99,7 +111,7 @@ def discover_bound_walks(
             if len(current.edge_ids) == len(pattern):
                 if current.edge_ids in seen:
                     continue
-                bound = _bind_pattern(pattern, current, nodes_by_id, edges_by_id)
+                bound = _bind_pattern(rule, current, nodes_by_id, edges_by_id)
                 if bound is None:
                     continue
                 if not _preconditions_ok(snapshot, rule, bound):
@@ -158,11 +170,12 @@ def _adjacency(
 
 
 def _bind_pattern(
-    pattern: list[PatternStep],
+    rule: ApprovedRule,
     walk: Walk,
     nodes_by_id: dict[str, GraphNode],
     edges_by_id: dict[str, GraphEdge],
 ) -> dict[str, str] | None:
+    pattern = rule.path_pattern
     if len(walk.edge_ids) != len(pattern):
         return None
     binding: dict[str, str] = {}
@@ -174,6 +187,17 @@ def _bind_pattern(
         if edge.source_id != source_id or edge.target_id != target_id:
             return None
         if edge.edge_type != step.relationship:
+            return None
+        if edge.edge_type == EdgeType.CAN_CREATE_AS and (
+            len(rule.required_capabilities) != 1
+            or edge.iam_action != rule.required_capabilities[0].action
+            or rule.required_capabilities[0].resource_selector.kind != "user"
+            or rule.required_capabilities[0].resource_selector.constraint != "iam_user"
+            or not any(
+                item.type == "target_is_iam_user" and item.subject == step.to_role
+                for item in rule.preconditions
+            )
+        ):
             return None
         if not _assign(binding, step.from_role, source_id, nodes_by_id):
             return None
@@ -199,27 +223,38 @@ def _preconditions_ok(
 ) -> bool:
     nodes_by_id = {node.node_id: node for node in snapshot.nodes}
     for item in rule.preconditions:
-        if item.type != "role_trusts_service":
-            return False
         subject = binding.get(item.subject)
-        if subject is None or not _trusts_service(snapshot, nodes_by_id, subject, item.value):
+        if subject is None:
+            return False
+        if item.type == "target_is_iam_user":
+            node = nodes_by_id[subject]
+            if node.node_type != NodeType.principal or node.subtype != "iam_user":
+                return False
+        elif item.type == "role_trusts_service":
+            if not service_trust_edges(snapshot, nodes_by_id, subject, item.value):
+                return False
+        else:
             return False
     return True
 
 
-def _trusts_service(
+def service_trust_edges(
     snapshot: IAMGraphSnapshot,
     nodes_by_id: dict[str, GraphNode],
     subject_id: str,
     service_name: str,
-) -> bool:
+) -> list[GraphEdge]:
+    """Allow TRUSTS edges from a role to one service. Deny edges are not trust."""
+    matches: list[GraphEdge] = []
     for edge in snapshot.edges:
         if edge.edge_type != EdgeType.TRUSTS or edge.source_id != subject_id:
+            continue
+        if edge.effect != AuthorizationEffect.allow:
             continue
         target = nodes_by_id[edge.target_id]
         if target.node_type != NodeType.service:
             continue
         principal = target.properties.get("service_principal", target.display_name)
         if principal == service_name:
-            return True
-    return False
+            matches.append(edge)
+    return matches

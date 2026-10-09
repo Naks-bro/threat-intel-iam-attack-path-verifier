@@ -4,6 +4,8 @@ These models are precise enough for fixtures and tests. They are not an accepted
 team contract until an ADR marks them accepted.
 """
 
+import hashlib
+import json
 import re
 from datetime import UTC, datetime
 from enum import StrEnum
@@ -289,6 +291,11 @@ class GraphNode(ContractModel):
 class GraphEdge(ContractModel):
     edge_id: IdStr
     edge_type: EdgeType
+    iam_action: str | None = Field(
+        default=None,
+        pattern=r"^[a-z0-9*]+:[A-Za-z0-9*]+$",
+        exclude_if=lambda value: value is None,
+    )
     source_id: IdStr
     target_id: IdStr
     derivation: str = Field(pattern=r"^policy_analysis$")
@@ -376,6 +383,16 @@ class IAMGraphSnapshot(ContractModel):
                 raise ValueError("duplicate semantic edge")
             semantic.add(key)
         return self
+
+    def content_digest(self) -> str:
+        """Bind the normalized graph bytes, not AWS provenance or effective access."""
+        payload = json.dumps(
+            self.model_dump(mode="json", by_alias=True),
+            sort_keys=True,
+            separators=(",", ":"),
+            ensure_ascii=False,
+        )
+        return "sha256:" + hashlib.sha256(payload.encode("utf-8")).hexdigest()
 
 
 class DiscoveryLimits(ContractModel):

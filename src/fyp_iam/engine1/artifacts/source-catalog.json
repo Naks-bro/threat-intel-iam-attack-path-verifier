@@ -1,0 +1,1566 @@
+{
+  "aws_ttc_status": "not_ingested",
+  "catalog_id": "system-source-catalog-0.1",
+  "checker": "not_used",
+  "combined_count": 12,
+  "individual_count": 54,
+  "kev_catalog_version": "2026.10.02",
+  "kev_matched_count": 0,
+  "produced_by": "automated-source-join-0.1",
+  "record_count": 66,
+  "records": [
+    {
+      "attachment": "individual",
+      "data_kind": "weakness",
+      "name": "Insecure cloud, container or orchestration configuration",
+      "node_id": "CNAS-1",
+      "platforms": [],
+      "rule_status": "no_rule_yet",
+      "source_ids": [
+        "CNAS-1"
+      ],
+      "sources": [
+        "owasp-cloud"
+      ],
+      "strength": 1,
+      "tactics": []
+    },
+    {
+      "attachment": "individual",
+      "data_kind": "weakness",
+      "name": "Ineffective logging & monitoring (e.g. runtime activity)",
+      "node_id": "CNAS-10",
+      "platforms": [],
+      "rule_status": "no_rule_yet",
+      "source_ids": [
+        "CNAS-10"
+      ],
+      "sources": [
+        "owasp-cloud"
+      ],
+      "strength": 1,
+      "tactics": []
+    },
+    {
+      "attachment": "individual",
+      "data_kind": "weakness",
+      "name": "Injection flaws (app layer, cloud events, cloud services)",
+      "node_id": "CNAS-2",
+      "platforms": [],
+      "rule_status": "no_rule_yet",
+      "source_ids": [
+        "CNAS-2"
+      ],
+      "sources": [
+        "owasp-cloud"
+      ],
+      "strength": 1,
+      "tactics": []
+    },
+    {
+      "attachment": "combined",
+      "data_kind": "weakness",
+      "name": "Improper authentication & authorization",
+      "node_id": "CNAS-3",
+      "platforms": [],
+      "rule_status": "no_rule_yet",
+      "source_ids": [
+        "CNAS-3",
+        "T1078",
+        "T1078.001",
+        "T1078.004",
+        "T1098",
+        "T1098.001",
+        "T1098.003",
+        "T1098.004"
+      ],
+      "sources": [
+        "mitre-attack",
+        "owasp-cloud"
+      ],
+      "strength": 2,
+      "tactics": []
+    },
+    {
+      "attachment": "individual",
+      "data_kind": "weakness",
+      "name": "CI/CD pipeline & software supply chain flaws",
+      "node_id": "CNAS-4",
+      "platforms": [],
+      "rule_status": "no_rule_yet",
+      "source_ids": [
+        "CNAS-4"
+      ],
+      "sources": [
+        "owasp-cloud"
+      ],
+      "strength": 1,
+      "tactics": []
+    },
+    {
+      "attachment": "individual",
+      "data_kind": "weakness",
+      "name": "Insecure secrets storage",
+      "node_id": "CNAS-5",
+      "platforms": [],
+      "rule_status": "no_rule_yet",
+      "source_ids": [
+        "CNAS-5"
+      ],
+      "sources": [
+        "owasp-cloud"
+      ],
+      "strength": 1,
+      "tactics": []
+    },
+    {
+      "attachment": "individual",
+      "data_kind": "weakness",
+      "name": "Over-permissive or insecure network policies",
+      "node_id": "CNAS-6",
+      "platforms": [],
+      "rule_status": "no_rule_yet",
+      "source_ids": [
+        "CNAS-6"
+      ],
+      "sources": [
+        "owasp-cloud"
+      ],
+      "strength": 1,
+      "tactics": []
+    },
+    {
+      "attachment": "combined",
+      "data_kind": "weakness",
+      "name": "Using components with known vulnerabilities",
+      "node_id": "CNAS-7",
+      "platforms": [],
+      "rule_status": "no_rule_yet",
+      "source_ids": [
+        "CNAS-7",
+        "CVE-2018-9057",
+        "CVE-2020-16250",
+        "CVE-2022-2385"
+      ],
+      "sources": [
+        "nvd",
+        "owasp-cloud"
+      ],
+      "strength": 2,
+      "tactics": []
+    },
+    {
+      "attachment": "individual",
+      "data_kind": "weakness",
+      "name": "Improper assets management",
+      "node_id": "CNAS-8",
+      "platforms": [],
+      "rule_status": "no_rule_yet",
+      "source_ids": [
+        "CNAS-8"
+      ],
+      "sources": [
+        "owasp-cloud"
+      ],
+      "strength": 1,
+      "tactics": []
+    },
+    {
+      "attachment": "individual",
+      "data_kind": "weakness",
+      "name": "Inadequate 'compute' resource quota limits",
+      "node_id": "CNAS-9",
+      "platforms": [],
+      "rule_status": "no_rule_yet",
+      "source_ids": [
+        "CNAS-9"
+      ],
+      "sources": [
+        "owasp-cloud"
+      ],
+      "strength": 1,
+      "tactics": []
+    },
+    {
+      "attachment": "combined",
+      "data_kind": "vulnerability",
+      "name": "NVD keyword-page record",
+      "node_id": "CVE-2018-9057",
+      "platforms": [],
+      "rule_status": "no_rule_yet",
+      "source_ids": [
+        "CNAS-7",
+        "CVE-2018-9057"
+      ],
+      "sources": [
+        "nvd",
+        "owasp-cloud"
+      ],
+      "strength": 2,
+      "tactics": []
+    },
+    {
+      "attachment": "individual",
+      "data_kind": "vulnerability",
+      "name": "NVD keyword-page record",
+      "node_id": "CVE-2019-10200",
+      "platforms": [],
+      "rule_status": "no_rule_yet",
+      "source_ids": [
+        "CVE-2019-10200"
+      ],
+      "sources": [
+        "nvd"
+      ],
+      "strength": 1,
+      "tactics": []
+    },
+    {
+      "attachment": "combined",
+      "data_kind": "vulnerability",
+      "name": "NVD keyword-page record",
+      "node_id": "CVE-2020-16250",
+      "platforms": [],
+      "rule_status": "no_rule_yet",
+      "source_ids": [
+        "CNAS-7",
+        "CVE-2020-16250"
+      ],
+      "sources": [
+        "nvd",
+        "owasp-cloud"
+      ],
+      "strength": 2,
+      "tactics": []
+    },
+    {
+      "attachment": "individual",
+      "data_kind": "vulnerability",
+      "name": "NVD keyword-page record",
+      "node_id": "CVE-2021-22969",
+      "platforms": [],
+      "rule_status": "no_rule_yet",
+      "source_ids": [
+        "CVE-2021-22969"
+      ],
+      "sources": [
+        "nvd"
+      ],
+      "strength": 1,
+      "tactics": []
+    },
+    {
+      "attachment": "combined",
+      "data_kind": "vulnerability",
+      "name": "NVD keyword-page record",
+      "node_id": "CVE-2022-2385",
+      "platforms": [],
+      "rule_status": "no_rule_yet",
+      "source_ids": [
+        "CNAS-7",
+        "CVE-2022-2385"
+      ],
+      "sources": [
+        "nvd",
+        "owasp-cloud"
+      ],
+      "strength": 2,
+      "tactics": []
+    },
+    {
+      "attachment": "individual",
+      "data_kind": "technique",
+      "name": "Traffic Duplication",
+      "node_id": "T1020.001",
+      "platforms": [
+        "IaaS",
+        "Network Devices"
+      ],
+      "rule_status": "no_rule_yet",
+      "source_ids": [
+        "T1020.001"
+      ],
+      "sources": [
+        "mitre-attack"
+      ],
+      "strength": 1,
+      "tactics": [
+        "exfiltration"
+      ]
+    },
+    {
+      "attachment": "individual",
+      "data_kind": "technique",
+      "name": "Remote Services",
+      "node_id": "T1021",
+      "platforms": [
+        "ESXi",
+        "IaaS",
+        "Linux",
+        "Windows",
+        "macOS"
+      ],
+      "rule_status": "no_rule_yet",
+      "source_ids": [
+        "T1021"
+      ],
+      "sources": [
+        "mitre-attack"
+      ],
+      "strength": 1,
+      "tactics": [
+        "lateral-movement"
+      ]
+    },
+    {
+      "attachment": "individual",
+      "data_kind": "technique",
+      "name": "Cloud Services",
+      "node_id": "T1021.007",
+      "platforms": [
+        "IaaS",
+        "Identity Provider",
+        "Office Suite",
+        "SaaS"
+      ],
+      "rule_status": "no_rule_yet",
+      "source_ids": [
+        "T1021.007"
+      ],
+      "sources": [
+        "mitre-attack"
+      ],
+      "strength": 1,
+      "tactics": [
+        "lateral-movement"
+      ]
+    },
+    {
+      "attachment": "individual",
+      "data_kind": "technique",
+      "name": "Direct Cloud VM Connections",
+      "node_id": "T1021.008",
+      "platforms": [
+        "IaaS"
+      ],
+      "rule_status": "no_rule_yet",
+      "source_ids": [
+        "T1021.008"
+      ],
+      "sources": [
+        "mitre-attack"
+      ],
+      "strength": 1,
+      "tactics": [
+        "lateral-movement"
+      ]
+    },
+    {
+      "attachment": "individual",
+      "data_kind": "technique",
+      "name": "Masquerade Account Name",
+      "node_id": "T1036.010",
+      "platforms": [
+        "Containers",
+        "IaaS",
+        "Identity Provider",
+        "Linux",
+        "Office Suite",
+        "SaaS",
+        "Windows",
+        "macOS"
+      ],
+      "rule_status": "no_rule_yet",
+      "source_ids": [
+        "T1036.010"
+      ],
+      "sources": [
+        "mitre-attack"
+      ],
+      "strength": 1,
+      "tactics": [
+        "stealth"
+      ]
+    },
+    {
+      "attachment": "individual",
+      "data_kind": "technique",
+      "name": "Network Sniffing",
+      "node_id": "T1040",
+      "platforms": [
+        "IaaS",
+        "Linux",
+        "Network Devices",
+        "Windows",
+        "macOS"
+      ],
+      "rule_status": "no_rule_yet",
+      "source_ids": [
+        "T1040"
+      ],
+      "sources": [
+        "mitre-attack"
+      ],
+      "strength": 1,
+      "tactics": [
+        "credential-access",
+        "discovery"
+      ]
+    },
+    {
+      "attachment": "individual",
+      "data_kind": "technique",
+      "name": "Network Service Discovery",
+      "node_id": "T1046",
+      "platforms": [
+        "Containers",
+        "IaaS",
+        "Linux",
+        "Network Devices",
+        "Windows",
+        "macOS"
+      ],
+      "rule_status": "no_rule_yet",
+      "source_ids": [
+        "T1046"
+      ],
+      "sources": [
+        "mitre-attack"
+      ],
+      "strength": 1,
+      "tactics": [
+        "discovery"
+      ]
+    },
+    {
+      "attachment": "individual",
+      "data_kind": "technique",
+      "name": "Exfiltration Over Alternative Protocol",
+      "node_id": "T1048",
+      "platforms": [
+        "ESXi",
+        "IaaS",
+        "Linux",
+        "Network Devices",
+        "Office Suite",
+        "SaaS",
+        "Windows",
+        "macOS"
+      ],
+      "rule_status": "no_rule_yet",
+      "source_ids": [
+        "T1048"
+      ],
+      "sources": [
+        "mitre-attack"
+      ],
+      "strength": 1,
+      "tactics": [
+        "exfiltration"
+      ]
+    },
+    {
+      "attachment": "individual",
+      "data_kind": "technique",
+      "name": "System Network Connections Discovery",
+      "node_id": "T1049",
+      "platforms": [
+        "ESXi",
+        "IaaS",
+        "Linux",
+        "Network Devices",
+        "Windows",
+        "macOS"
+      ],
+      "rule_status": "no_rule_yet",
+      "source_ids": [
+        "T1049"
+      ],
+      "sources": [
+        "mitre-attack"
+      ],
+      "strength": 1,
+      "tactics": [
+        "discovery"
+      ]
+    },
+    {
+      "attachment": "individual",
+      "data_kind": "technique",
+      "name": "Command and Scripting Interpreter",
+      "node_id": "T1059",
+      "platforms": [
+        "Containers",
+        "ESXi",
+        "IaaS",
+        "Identity Provider",
+        "Linux",
+        "Network Devices",
+        "Office Suite",
+        "SaaS",
+        "Windows",
+        "macOS"
+      ],
+      "rule_status": "no_rule_yet",
+      "source_ids": [
+        "T1059"
+      ],
+      "sources": [
+        "mitre-attack"
+      ],
+      "strength": 1,
+      "tactics": [
+        "execution"
+      ]
+    },
+    {
+      "attachment": "individual",
+      "data_kind": "technique",
+      "name": "Cloud API",
+      "node_id": "T1059.009",
+      "platforms": [
+        "IaaS",
+        "Identity Provider",
+        "Office Suite",
+        "SaaS"
+      ],
+      "rule_status": "no_rule_yet",
+      "source_ids": [
+        "T1059.009"
+      ],
+      "sources": [
+        "mitre-attack"
+      ],
+      "strength": 1,
+      "tactics": [
+        "execution"
+      ]
+    },
+    {
+      "attachment": "individual",
+      "data_kind": "technique",
+      "name": "Permission Groups Discovery",
+      "node_id": "T1069",
+      "platforms": [
+        "Containers",
+        "IaaS",
+        "Identity Provider",
+        "Linux",
+        "Office Suite",
+        "SaaS",
+        "Windows",
+        "macOS"
+      ],
+      "rule_status": "no_rule_yet",
+      "source_ids": [
+        "T1069"
+      ],
+      "sources": [
+        "mitre-attack"
+      ],
+      "strength": 1,
+      "tactics": [
+        "discovery"
+      ]
+    },
+    {
+      "attachment": "individual",
+      "data_kind": "technique",
+      "name": "Cloud Groups",
+      "node_id": "T1069.003",
+      "platforms": [
+        "IaaS",
+        "Identity Provider",
+        "Office Suite",
+        "SaaS"
+      ],
+      "rule_status": "no_rule_yet",
+      "source_ids": [
+        "T1069.003"
+      ],
+      "sources": [
+        "mitre-attack"
+      ],
+      "strength": 1,
+      "tactics": [
+        "discovery"
+      ]
+    },
+    {
+      "attachment": "individual",
+      "data_kind": "technique",
+      "name": "Data Staged",
+      "node_id": "T1074",
+      "platforms": [
+        "ESXi",
+        "IaaS",
+        "Linux",
+        "Windows",
+        "macOS"
+      ],
+      "rule_status": "no_rule_yet",
+      "source_ids": [
+        "T1074"
+      ],
+      "sources": [
+        "mitre-attack"
+      ],
+      "strength": 1,
+      "tactics": [
+        "collection"
+      ]
+    },
+    {
+      "attachment": "individual",
+      "data_kind": "technique",
+      "name": "Remote Data Staging",
+      "node_id": "T1074.002",
+      "platforms": [
+        "ESXi",
+        "IaaS",
+        "Linux",
+        "Windows",
+        "macOS"
+      ],
+      "rule_status": "no_rule_yet",
+      "source_ids": [
+        "T1074.002"
+      ],
+      "sources": [
+        "mitre-attack"
+      ],
+      "strength": 1,
+      "tactics": [
+        "collection"
+      ]
+    },
+    {
+      "attachment": "combined",
+      "data_kind": "technique",
+      "name": "Valid Accounts",
+      "node_id": "T1078",
+      "platforms": [
+        "Containers",
+        "ESXi",
+        "IaaS",
+        "Identity Provider",
+        "Linux",
+        "Network Devices",
+        "Office Suite",
+        "SaaS",
+        "Windows",
+        "macOS"
+      ],
+      "rule_status": "no_rule_yet",
+      "source_ids": [
+        "CNAS-3",
+        "T1078"
+      ],
+      "sources": [
+        "mitre-attack",
+        "owasp-cloud"
+      ],
+      "strength": 2,
+      "tactics": [
+        "initial-access",
+        "persistence",
+        "privilege-escalation",
+        "stealth"
+      ]
+    },
+    {
+      "attachment": "combined",
+      "data_kind": "technique",
+      "name": "Default Accounts",
+      "node_id": "T1078.001",
+      "platforms": [
+        "Containers",
+        "ESXi",
+        "IaaS",
+        "Identity Provider",
+        "Linux",
+        "Network Devices",
+        "Office Suite",
+        "SaaS",
+        "Windows",
+        "macOS"
+      ],
+      "rule_status": "no_rule_yet",
+      "source_ids": [
+        "CNAS-3",
+        "T1078.001"
+      ],
+      "sources": [
+        "mitre-attack",
+        "owasp-cloud"
+      ],
+      "strength": 2,
+      "tactics": [
+        "initial-access",
+        "persistence",
+        "privilege-escalation",
+        "stealth"
+      ]
+    },
+    {
+      "attachment": "combined",
+      "data_kind": "technique",
+      "name": "Cloud Accounts",
+      "node_id": "T1078.004",
+      "platforms": [
+        "IaaS",
+        "Identity Provider",
+        "Office Suite",
+        "SaaS"
+      ],
+      "rule_status": "no_rule_yet",
+      "source_ids": [
+        "CNAS-3",
+        "T1078.004"
+      ],
+      "sources": [
+        "mitre-attack",
+        "owasp-cloud"
+      ],
+      "strength": 2,
+      "tactics": [
+        "initial-access",
+        "persistence",
+        "privilege-escalation",
+        "stealth"
+      ]
+    },
+    {
+      "attachment": "individual",
+      "data_kind": "technique",
+      "name": "System Information Discovery",
+      "node_id": "T1082",
+      "platforms": [
+        "ESXi",
+        "IaaS",
+        "Linux",
+        "Network Devices",
+        "Windows",
+        "macOS"
+      ],
+      "rule_status": "no_rule_yet",
+      "source_ids": [
+        "T1082"
+      ],
+      "sources": [
+        "mitre-attack"
+      ],
+      "strength": 1,
+      "tactics": [
+        "discovery"
+      ]
+    },
+    {
+      "attachment": "individual",
+      "data_kind": "technique",
+      "name": "Account Discovery",
+      "node_id": "T1087",
+      "platforms": [
+        "ESXi",
+        "IaaS",
+        "Identity Provider",
+        "Linux",
+        "Office Suite",
+        "SaaS",
+        "Windows",
+        "macOS"
+      ],
+      "rule_status": "no_rule_yet",
+      "source_ids": [
+        "T1087"
+      ],
+      "sources": [
+        "mitre-attack"
+      ],
+      "strength": 1,
+      "tactics": [
+        "discovery"
+      ]
+    },
+    {
+      "attachment": "individual",
+      "data_kind": "technique",
+      "name": "Cloud Account",
+      "node_id": "T1087.004",
+      "platforms": [
+        "IaaS",
+        "Identity Provider",
+        "Office Suite",
+        "SaaS"
+      ],
+      "rule_status": "no_rule_yet",
+      "source_ids": [
+        "T1087.004"
+      ],
+      "sources": [
+        "mitre-attack"
+      ],
+      "strength": 1,
+      "tactics": [
+        "discovery"
+      ]
+    },
+    {
+      "attachment": "combined",
+      "data_kind": "technique",
+      "name": "Account Manipulation",
+      "node_id": "T1098",
+      "platforms": [
+        "Containers",
+        "ESXi",
+        "IaaS",
+        "Identity Provider",
+        "Linux",
+        "Network Devices",
+        "Office Suite",
+        "SaaS",
+        "Windows",
+        "macOS"
+      ],
+      "rule_status": "no_rule_yet",
+      "source_ids": [
+        "CNAS-3",
+        "T1098"
+      ],
+      "sources": [
+        "mitre-attack",
+        "owasp-cloud"
+      ],
+      "strength": 2,
+      "tactics": [
+        "persistence",
+        "privilege-escalation"
+      ]
+    },
+    {
+      "attachment": "combined",
+      "data_kind": "technique",
+      "name": "Additional Cloud Credentials",
+      "node_id": "T1098.001",
+      "platforms": [
+        "IaaS",
+        "Identity Provider",
+        "SaaS"
+      ],
+      "rule_status": "no_rule_yet",
+      "source_ids": [
+        "CNAS-3",
+        "T1098.001"
+      ],
+      "sources": [
+        "mitre-attack",
+        "owasp-cloud"
+      ],
+      "strength": 2,
+      "tactics": [
+        "persistence",
+        "privilege-escalation"
+      ]
+    },
+    {
+      "attachment": "combined",
+      "data_kind": "technique",
+      "name": "Additional Cloud Roles",
+      "node_id": "T1098.003",
+      "platforms": [
+        "IaaS",
+        "Identity Provider",
+        "Office Suite",
+        "SaaS"
+      ],
+      "rule_status": "no_rule_yet",
+      "source_ids": [
+        "CNAS-3",
+        "T1098.003"
+      ],
+      "sources": [
+        "mitre-attack",
+        "owasp-cloud"
+      ],
+      "strength": 2,
+      "tactics": [
+        "persistence",
+        "privilege-escalation"
+      ]
+    },
+    {
+      "attachment": "combined",
+      "data_kind": "technique",
+      "name": "SSH Authorized Keys",
+      "node_id": "T1098.004",
+      "platforms": [
+        "ESXi",
+        "IaaS",
+        "Linux",
+        "Network Devices",
+        "macOS"
+      ],
+      "rule_status": "no_rule_yet",
+      "source_ids": [
+        "CNAS-3",
+        "T1098.004"
+      ],
+      "sources": [
+        "mitre-attack",
+        "owasp-cloud"
+      ],
+      "strength": 2,
+      "tactics": [
+        "persistence",
+        "privilege-escalation"
+      ]
+    },
+    {
+      "attachment": "individual",
+      "data_kind": "technique",
+      "name": "Brute Force",
+      "node_id": "T1110",
+      "platforms": [
+        "Containers",
+        "ESXi",
+        "IaaS",
+        "Identity Provider",
+        "Linux",
+        "Network Devices",
+        "Office Suite",
+        "SaaS",
+        "Windows",
+        "macOS"
+      ],
+      "rule_status": "no_rule_yet",
+      "source_ids": [
+        "T1110"
+      ],
+      "sources": [
+        "mitre-attack"
+      ],
+      "strength": 1,
+      "tactics": [
+        "credential-access"
+      ]
+    },
+    {
+      "attachment": "individual",
+      "data_kind": "technique",
+      "name": "Password Guessing",
+      "node_id": "T1110.001",
+      "platforms": [
+        "Containers",
+        "ESXi",
+        "IaaS",
+        "Identity Provider",
+        "Linux",
+        "Network Devices",
+        "Office Suite",
+        "SaaS",
+        "Windows",
+        "macOS"
+      ],
+      "rule_status": "no_rule_yet",
+      "source_ids": [
+        "T1110.001"
+      ],
+      "sources": [
+        "mitre-attack"
+      ],
+      "strength": 1,
+      "tactics": [
+        "credential-access"
+      ]
+    },
+    {
+      "attachment": "individual",
+      "data_kind": "technique",
+      "name": "Password Spraying",
+      "node_id": "T1110.003",
+      "platforms": [
+        "Containers",
+        "ESXi",
+        "IaaS",
+        "Identity Provider",
+        "Linux",
+        "Network Devices",
+        "Office Suite",
+        "SaaS",
+        "Windows",
+        "macOS"
+      ],
+      "rule_status": "no_rule_yet",
+      "source_ids": [
+        "T1110.003"
+      ],
+      "sources": [
+        "mitre-attack"
+      ],
+      "strength": 1,
+      "tactics": [
+        "credential-access"
+      ]
+    },
+    {
+      "attachment": "individual",
+      "data_kind": "technique",
+      "name": "Credential Stuffing",
+      "node_id": "T1110.004",
+      "platforms": [
+        "Containers",
+        "ESXi",
+        "IaaS",
+        "Identity Provider",
+        "Linux",
+        "Network Devices",
+        "Office Suite",
+        "SaaS",
+        "Windows",
+        "macOS"
+      ],
+      "rule_status": "no_rule_yet",
+      "source_ids": [
+        "T1110.004"
+      ],
+      "sources": [
+        "mitre-attack"
+      ],
+      "strength": 1,
+      "tactics": [
+        "credential-access"
+      ]
+    },
+    {
+      "attachment": "individual",
+      "data_kind": "technique",
+      "name": "Automated Collection",
+      "node_id": "T1119",
+      "platforms": [
+        "IaaS",
+        "Linux",
+        "Office Suite",
+        "SaaS",
+        "Windows",
+        "macOS"
+      ],
+      "rule_status": "no_rule_yet",
+      "source_ids": [
+        "T1119"
+      ],
+      "sources": [
+        "mitre-attack"
+      ],
+      "strength": 1,
+      "tactics": [
+        "collection"
+      ]
+    },
+    {
+      "attachment": "individual",
+      "data_kind": "technique",
+      "name": "Create Account",
+      "node_id": "T1136",
+      "platforms": [
+        "Containers",
+        "ESXi",
+        "IaaS",
+        "Identity Provider",
+        "Linux",
+        "Network Devices",
+        "Office Suite",
+        "SaaS",
+        "Windows",
+        "macOS"
+      ],
+      "rule_status": "no_rule_yet",
+      "source_ids": [
+        "T1136"
+      ],
+      "sources": [
+        "mitre-attack"
+      ],
+      "strength": 1,
+      "tactics": [
+        "persistence"
+      ]
+    },
+    {
+      "attachment": "individual",
+      "data_kind": "technique",
+      "name": "Cloud Account",
+      "node_id": "T1136.003",
+      "platforms": [
+        "IaaS",
+        "Identity Provider",
+        "Office Suite",
+        "SaaS"
+      ],
+      "rule_status": "no_rule_yet",
+      "source_ids": [
+        "T1136.003"
+      ],
+      "sources": [
+        "mitre-attack"
+      ],
+      "strength": 1,
+      "tactics": [
+        "persistence"
+      ]
+    },
+    {
+      "attachment": "individual",
+      "data_kind": "technique",
+      "name": "Exploit Public-Facing Application",
+      "node_id": "T1190",
+      "platforms": [
+        "Containers",
+        "ESXi",
+        "IaaS",
+        "Linux",
+        "Network Devices",
+        "Windows",
+        "macOS"
+      ],
+      "rule_status": "no_rule_yet",
+      "source_ids": [
+        "T1190"
+      ],
+      "sources": [
+        "mitre-attack"
+      ],
+      "strength": 1,
+      "tactics": [
+        "initial-access"
+      ]
+    },
+    {
+      "attachment": "individual",
+      "data_kind": "technique",
+      "name": "Trusted Relationship",
+      "node_id": "T1199",
+      "platforms": [
+        "IaaS",
+        "Identity Provider",
+        "Linux",
+        "Office Suite",
+        "SaaS",
+        "Windows",
+        "macOS"
+      ],
+      "rule_status": "no_rule_yet",
+      "source_ids": [
+        "T1199"
+      ],
+      "sources": [
+        "mitre-attack"
+      ],
+      "strength": 1,
+      "tactics": [
+        "initial-access"
+      ]
+    },
+    {
+      "attachment": "individual",
+      "data_kind": "technique",
+      "name": "Password Policy Discovery",
+      "node_id": "T1201",
+      "platforms": [
+        "IaaS",
+        "Identity Provider",
+        "Linux",
+        "Network Devices",
+        "Office Suite",
+        "SaaS",
+        "Windows",
+        "macOS"
+      ],
+      "rule_status": "no_rule_yet",
+      "source_ids": [
+        "T1201"
+      ],
+      "sources": [
+        "mitre-attack"
+      ],
+      "strength": 1,
+      "tactics": [
+        "discovery"
+      ]
+    },
+    {
+      "attachment": "individual",
+      "data_kind": "technique",
+      "name": "User Execution",
+      "node_id": "T1204",
+      "platforms": [
+        "Containers",
+        "IaaS",
+        "Linux",
+        "Windows",
+        "macOS"
+      ],
+      "rule_status": "no_rule_yet",
+      "source_ids": [
+        "T1204"
+      ],
+      "sources": [
+        "mitre-attack"
+      ],
+      "strength": 1,
+      "tactics": [
+        "execution"
+      ]
+    },
+    {
+      "attachment": "individual",
+      "data_kind": "technique",
+      "name": "Malicious Image",
+      "node_id": "T1204.003",
+      "platforms": [
+        "Containers",
+        "IaaS"
+      ],
+      "rule_status": "no_rule_yet",
+      "source_ids": [
+        "T1204.003"
+      ],
+      "sources": [
+        "mitre-attack"
+      ],
+      "strength": 1,
+      "tactics": [
+        "execution"
+      ]
+    },
+    {
+      "attachment": "individual",
+      "data_kind": "technique",
+      "name": "Exploitation for Stealth",
+      "node_id": "T1211",
+      "platforms": [
+        "IaaS",
+        "Linux",
+        "SaaS",
+        "Windows",
+        "macOS"
+      ],
+      "rule_status": "no_rule_yet",
+      "source_ids": [
+        "T1211"
+      ],
+      "sources": [
+        "mitre-attack"
+      ],
+      "strength": 1,
+      "tactics": [
+        "stealth"
+      ]
+    },
+    {
+      "attachment": "individual",
+      "data_kind": "technique",
+      "name": "Data from Information Repositories",
+      "node_id": "T1213",
+      "platforms": [
+        "IaaS",
+        "Linux",
+        "Office Suite",
+        "SaaS",
+        "Windows",
+        "macOS"
+      ],
+      "rule_status": "no_rule_yet",
+      "source_ids": [
+        "T1213"
+      ],
+      "sources": [
+        "mitre-attack"
+      ],
+      "strength": 1,
+      "tactics": [
+        "collection"
+      ]
+    },
+    {
+      "attachment": "individual",
+      "data_kind": "technique",
+      "name": "Databases",
+      "node_id": "T1213.006",
+      "platforms": [
+        "IaaS",
+        "Linux",
+        "SaaS",
+        "Windows",
+        "macOS"
+      ],
+      "rule_status": "no_rule_yet",
+      "source_ids": [
+        "T1213.006"
+      ],
+      "sources": [
+        "mitre-attack"
+      ],
+      "strength": 1,
+      "tactics": [
+        "collection"
+      ]
+    },
+    {
+      "attachment": "individual",
+      "data_kind": "technique",
+      "name": "Data Destruction",
+      "node_id": "T1485",
+      "platforms": [
+        "Containers",
+        "ESXi",
+        "IaaS",
+        "Linux",
+        "Windows",
+        "macOS"
+      ],
+      "rule_status": "no_rule_yet",
+      "source_ids": [
+        "T1485"
+      ],
+      "sources": [
+        "mitre-attack"
+      ],
+      "strength": 1,
+      "tactics": [
+        "impact"
+      ]
+    },
+    {
+      "attachment": "individual",
+      "data_kind": "technique",
+      "name": "Lifecycle-Triggered Deletion",
+      "node_id": "T1485.001",
+      "platforms": [
+        "IaaS"
+      ],
+      "rule_status": "no_rule_yet",
+      "source_ids": [
+        "T1485.001"
+      ],
+      "sources": [
+        "mitre-attack"
+      ],
+      "strength": 1,
+      "tactics": [
+        "impact"
+      ]
+    },
+    {
+      "attachment": "individual",
+      "data_kind": "technique",
+      "name": "Data Encrypted for Impact",
+      "node_id": "T1486",
+      "platforms": [
+        "ESXi",
+        "IaaS",
+        "Linux",
+        "Windows",
+        "macOS"
+      ],
+      "rule_status": "no_rule_yet",
+      "source_ids": [
+        "T1486"
+      ],
+      "sources": [
+        "mitre-attack"
+      ],
+      "strength": 1,
+      "tactics": [
+        "impact"
+      ]
+    },
+    {
+      "attachment": "individual",
+      "data_kind": "technique",
+      "name": "Service Stop",
+      "node_id": "T1489",
+      "platforms": [
+        "ESXi",
+        "IaaS",
+        "Linux",
+        "Windows",
+        "macOS"
+      ],
+      "rule_status": "no_rule_yet",
+      "source_ids": [
+        "T1489"
+      ],
+      "sources": [
+        "mitre-attack"
+      ],
+      "strength": 1,
+      "tactics": [
+        "impact"
+      ]
+    },
+    {
+      "attachment": "individual",
+      "data_kind": "technique",
+      "name": "Inhibit System Recovery",
+      "node_id": "T1490",
+      "platforms": [
+        "Containers",
+        "ESXi",
+        "IaaS",
+        "Linux",
+        "Network Devices",
+        "Windows",
+        "macOS"
+      ],
+      "rule_status": "no_rule_yet",
+      "source_ids": [
+        "T1490"
+      ],
+      "sources": [
+        "mitre-attack"
+      ],
+      "strength": 1,
+      "tactics": [
+        "impact"
+      ]
+    },
+    {
+      "attachment": "individual",
+      "data_kind": "technique",
+      "name": "Defacement",
+      "node_id": "T1491",
+      "platforms": [
+        "ESXi",
+        "IaaS",
+        "Linux",
+        "Windows",
+        "macOS"
+      ],
+      "rule_status": "no_rule_yet",
+      "source_ids": [
+        "T1491"
+      ],
+      "sources": [
+        "mitre-attack"
+      ],
+      "strength": 1,
+      "tactics": [
+        "impact"
+      ]
+    },
+    {
+      "attachment": "individual",
+      "data_kind": "technique",
+      "name": "External Defacement",
+      "node_id": "T1491.002",
+      "platforms": [
+        "IaaS",
+        "Linux",
+        "Windows",
+        "macOS"
+      ],
+      "rule_status": "no_rule_yet",
+      "source_ids": [
+        "T1491.002"
+      ],
+      "sources": [
+        "mitre-attack"
+      ],
+      "strength": 1,
+      "tactics": [
+        "impact"
+      ]
+    },
+    {
+      "attachment": "individual",
+      "data_kind": "technique",
+      "name": "Resource Hijacking",
+      "node_id": "T1496",
+      "platforms": [
+        "Containers",
+        "IaaS",
+        "Linux",
+        "SaaS",
+        "Windows",
+        "macOS"
+      ],
+      "rule_status": "no_rule_yet",
+      "source_ids": [
+        "T1496"
+      ],
+      "sources": [
+        "mitre-attack"
+      ],
+      "strength": 1,
+      "tactics": [
+        "impact"
+      ]
+    },
+    {
+      "attachment": "individual",
+      "data_kind": "technique",
+      "name": "Compute Hijacking",
+      "node_id": "T1496.001",
+      "platforms": [
+        "Containers",
+        "IaaS",
+        "Linux",
+        "Windows",
+        "macOS"
+      ],
+      "rule_status": "no_rule_yet",
+      "source_ids": [
+        "T1496.001"
+      ],
+      "sources": [
+        "mitre-attack"
+      ],
+      "strength": 1,
+      "tactics": [
+        "impact"
+      ]
+    },
+    {
+      "attachment": "individual",
+      "data_kind": "technique",
+      "name": "Bandwidth Hijacking",
+      "node_id": "T1496.002",
+      "platforms": [
+        "Containers",
+        "IaaS",
+        "Linux",
+        "Windows",
+        "macOS"
+      ],
+      "rule_status": "no_rule_yet",
+      "source_ids": [
+        "T1496.002"
+      ],
+      "sources": [
+        "mitre-attack"
+      ],
+      "strength": 1,
+      "tactics": [
+        "impact"
+      ]
+    },
+    {
+      "attachment": "individual",
+      "data_kind": "catalog",
+      "name": "CISA KEV catalog",
+      "node_id": "cisa-kev-2026.10.02",
+      "platforms": [],
+      "rule_status": "no_rule_yet",
+      "source_ids": [
+        "2026.10.02"
+      ],
+      "sources": [
+        "cisa-kev"
+      ],
+      "strength": 1,
+      "tactics": []
+    }
+  ],
+  "schema_version": "0.1",
+  "statement": "Compact catalog for this system. A technique is an ATT&CK entry, a weakness is an OWASP cloud item, a vulnerability is an NVD record, and a catalog row is the CISA KEV header. Strength counts source families. The automated join wrote this file. A model checker has not run."
+}

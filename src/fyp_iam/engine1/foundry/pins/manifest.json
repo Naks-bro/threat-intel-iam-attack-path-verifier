@@ -1,0 +1,45 @@
+{
+  "files": [
+    {
+      "name": "mitre-enterprise-19.2-extract.json",
+      "role": "stix",
+      "sha256": "sha256:46846c10a525d7568f3d8a78d926d5be5fed2b4bc8b30e9fe03d14a733a0533d"
+    },
+    {
+      "name": "aws-service-reference-extract.json",
+      "role": "aws",
+      "sha256": "sha256:5cf38d5f3d5ab1386d0a68f6b3b0e91b2966d79cadc6b8e12d5df84e1e3c4eef"
+    },
+    {
+      "name": "stratus-iam-redacted.json",
+      "role": "stratus",
+      "sha256": "sha256:a656f4260254b1d1ccd21c103e03c66fbb2d2d2bb2a42a2b7da5a51723f3d7c0"
+    }
+  ],
+  "sources": [
+    {
+      "source_key": "mitre-attack",
+      "authority_tier": 1,
+      "source_type": "taxonomy",
+      "official_url": "https://github.com/mitre-attack/attack-stix-data",
+      "version_label": "19.2",
+      "content_hash": "sha256:46846c10a525d7568f3d8a78d926d5be5fed2b4bc8b30e9fe03d14a733a0533d"
+    },
+    {
+      "source_key": "aws-service-reference",
+      "authority_tier": 1,
+      "source_type": "service_reference",
+      "official_url": "https://servicereference.us-east-1.amazonaws.com/v1/service-list.json",
+      "version_label": "v1.4",
+      "content_hash": "sha256:5cf38d5f3d5ab1386d0a68f6b3b0e91b2966d79cadc6b8e12d5df84e1e3c4eef"
+    },
+    {
+      "source_key": "stratus-red-team",
+      "authority_tier": 2,
+      "source_type": "community_behavior",
+      "official_url": "https://github.com/DataDog/stratus-red-team",
+      "version_label": "redacted-field-extract-0.1",
+      "content_hash": "sha256:a656f4260254b1d1ccd21c103e03c66fbb2d2d2bb2a42a2b7da5a51723f3d7c0"
+    }
+  ]
+}

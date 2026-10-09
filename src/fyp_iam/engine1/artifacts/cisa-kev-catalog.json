@@ -1,0 +1,13 @@
+{
+  "catalog_version": "2026.10.02",
+  "date_released": "2026-10-02T15:19:38.2945Z",
+  "feed_sha256": "sha256:d2c8c6cb23291b46ff2b086197641a6b1fa35e6b746bba714cc280a1778f9e48",
+  "feed_url": "https://www.cisa.gov/sites/default/files/feeds/known_exploited_vulnerabilities.json",
+  "license_note": "CISA Known Exploited Vulnerabilities JSON feed. Vulnerability bodies are not stored.",
+  "matched_cve_ids": [],
+  "product_filter": "vendor or product contains Amazon or AWS as a whole token",
+  "retrieved_at": "2026-10-02T18:04:37Z",
+  "schema_version": "0.1",
+  "source_name": "cisa-kev",
+  "vulnerability_count": 1733
+}

@@ -1,0 +1,58 @@
+{
+  "services": [
+    {
+      "prefix": "iam",
+      "version": "v1.4",
+      "actions": [
+        {
+          "name": "AttachRolePolicy",
+          "resources": [
+            "role"
+          ]
+        },
+        {
+          "name": "CreateAccessKey",
+          "resources": [
+            "user"
+          ]
+        },
+        {
+          "name": "CreateRole",
+          "resources": [
+            "role"
+          ]
+        },
+        {
+          "name": "GetRole",
+          "resources": [
+            "role"
+          ]
+        },
+        {
+          "name": "ListAccessKeys",
+          "resources": [
+            "user"
+          ]
+        },
+        {
+          "name": "UpdateAssumeRolePolicy",
+          "resources": [
+            "role"
+          ]
+        }
+      ]
+    },
+    {
+      "prefix": "sts",
+      "version": "v1.4",
+      "actions": [
+        {
+          "name": "AssumeRole",
+          "resources": [
+            "role"
+          ]
+        }
+      ]
+    }
+  ]
+}

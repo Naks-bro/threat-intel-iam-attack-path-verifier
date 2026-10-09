@@ -67,6 +67,14 @@ Generated prose must cite immutable evidence IDs. If an LLM is used, factual slo
 
 Engine 4 owns experiment orchestration and reporting, but each engine owns correctness metrics for its output. Results must be reproducible from a manifest containing dataset versions/hashes, rule versions, graph snapshot IDs, code revision, configuration, model/prompt identifiers, and random seeds where applicable.
 
+## Local explanation (implemented)
+
+`build_finding` writes the explanation from the rule, the path, and the verification record. Each hop cites its edge id, effect, policy refs, and condition keys. Unknown context, unsupported conditions, denied edges, fixture notes, and incomplete collection are copied into the text. Simulator status is `not_run` and sandbox status is `not_mapped`. The baseline score is unchanged: `severity_weight * status_weight`. No LLM is called.
+
+`GET /reviews` lists the six fixtures with status, priority, and score. `GET /reviews/fixtures/{case_id}` shows the rule, approval, hops, evidence, remediation, and a coverage panel that stays on the page. `GET /reviews/rules/attack-t1548-assume-chain` shows the pinned technique, the excerpt, and the pending rule. A separate approval request records the decision. `GET /reviews/datasets/cloud-techniques` lists the 50 normalized ATT&CK rows and their rule status. `GET /reviews/datasets/opportunities` lists the stored compact catalog: technique, weakness, vulnerability, or catalog, with sources and strength. `no_rule_yet` means the row is not sent to path search. Strength is not a verification result. The catalog is written by the automated join. A model checker has not run. Finding text is escaped. These pages are server-rendered HTML, not a separate frontend. React remains **Proposed**.
+
+`GET /v1/experiments/local-fixtures` and `GET /reviews/experiment` record the RQ3 run: fixture-file hash, rule versions, snapshot ids, verdict counts, and a result hash. The model, prompt, and random seed are `not_used`. Simulator status is `not_run` and sandbox status is `not_mapped`. Timestamps are the fixture evaluation times.
+
 ## Acceptance criteria
 
 - UI never labels simulator-only evidence as sandbox verification.

@@ -1,0 +1,8 @@
+---
+description: Apply the relevant project-local ECC skill to FYP implementation and verification work while preserving the project's evidence and safety boundaries.
+alwaysApply: true
+---
+
+Read `AGENTS.md` and use `docs/16_ECC_SKILL_WORKFLOW.md` to select only the ECC skill relevant to the current task from `.cursor/skills/`. Read that skill's full `SKILL.md` before applying it. Use the repository's own quality commands and truth labels; do not blindly run generic commands from a skill.
+
+Project contracts, human approval, pinned evidence, read-only live AWS, and secret-handling rules take precedence over generic ECC examples. Do not enable ECC hooks or MCP servers, use a real AI provider, publish a rule, or touch Supabase merely because a skill describes those actions. Report which skill was used and what it actually verified.

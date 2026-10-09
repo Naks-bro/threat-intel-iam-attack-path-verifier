@@ -1,0 +1,59 @@
+{
+  "license_note": "OWASP Cloud-Native Application Security Top 10 short names only. Guidance prose is not stored.",
+  "project_url": "https://owasp.org/www-project-cloud-native-application-security-top-10/",
+  "records": [
+    {
+      "external_id": "CNAS-1",
+      "name": "Insecure cloud, container or orchestration configuration",
+      "source_file": "2022/en/src/0x01_insecure_cco_config.md"
+    },
+    {
+      "external_id": "CNAS-2",
+      "name": "Injection flaws (app layer, cloud events, cloud services)",
+      "source_file": "2022/en/src/0x02_inj_flaws.md"
+    },
+    {
+      "external_id": "CNAS-3",
+      "name": "Improper authentication & authorization",
+      "source_file": "2022/en/src/0x03_improper_auth.md"
+    },
+    {
+      "external_id": "CNAS-4",
+      "name": "CI/CD pipeline & software supply chain flaws",
+      "source_file": "2022/en/src/0x04_cicd_ssc_flaws.md"
+    },
+    {
+      "external_id": "CNAS-5",
+      "name": "Insecure secrets storage",
+      "source_file": "2022/en/src/0x05_insecure_secrets.md"
+    },
+    {
+      "external_id": "CNAS-6",
+      "name": "Over-permissive or insecure network policies",
+      "source_file": "2022/en/src/0x06_over_permissive_network.md"
+    },
+    {
+      "external_id": "CNAS-7",
+      "name": "Using components with known vulnerabilities",
+      "source_file": "2022/en/src/0x07_vuln_components.md"
+    },
+    {
+      "external_id": "CNAS-8",
+      "name": "Improper assets management",
+      "source_file": "2022/en/src/0x08_asset_mgmt.md"
+    },
+    {
+      "external_id": "CNAS-9",
+      "name": "Inadequate 'compute' resource quota limits",
+      "source_file": "2022/en/src/0x09_compute_resources.md"
+    },
+    {
+      "external_id": "CNAS-10",
+      "name": "Ineffective logging & monitoring (e.g. runtime activity)",
+      "source_file": "2022/en/src/0x0A_logging.md"
+    }
+  ],
+  "schema_version": "0.1",
+  "source_name": "owasp-cloud",
+  "source_version": "2022"
+}

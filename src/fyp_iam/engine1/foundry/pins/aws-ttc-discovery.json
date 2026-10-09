@@ -1,0 +1,9 @@
+{
+  "source_key": "aws-threat-technique-catalog",
+  "status": "failed",
+  "reason": "repository_not_found",
+  "http_status": 404,
+  "url": "https://github.com/aws-samples/threat-technique-catalog-for-aws",
+  "detail": "Bounded probe recorded on 2026-10-03. No versioned JSON export was confirmed. Unit tests use this record and do not open a network connection.",
+  "checked_at": "2026-10-03T00:00:00Z"
+}

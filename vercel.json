@@ -1,0 +1,12 @@
+{
+  "framework": "fastapi",
+  "regions": ["sin1"],
+  "installCommand": "pip install -r requirements.txt && npm --prefix frontend ci",
+  "buildCommand": "npm --prefix frontend run build",
+  "functions": {
+    "app.py": {
+      "maxDuration": 60,
+      "includeFiles": "frontend/dist/**"
+    }
+  }
+}

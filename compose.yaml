@@ -1,0 +1,18 @@
+# Local PostgreSQL for collaborators who have Docker.
+# This file is not run on the project machine. It does not embed a password.
+# Set FYP_POSTGRES_PASSWORD in the environment before `docker compose up`.
+
+services:
+  postgres:
+    image: postgres:16
+    environment:
+      POSTGRES_USER: fyp
+      POSTGRES_PASSWORD: ${FYP_POSTGRES_PASSWORD:?set FYP_POSTGRES_PASSWORD}
+      POSTGRES_DB: fyp_iam
+    ports:
+      - "127.0.0.1:5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U fyp -d fyp_iam"]
+      interval: 10s
+      timeout: 5s
+      retries: 5

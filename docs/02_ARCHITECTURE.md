@@ -52,13 +52,13 @@ The tentative shared stack is:
 | Language | Python 3.12 | Used by this checkout; pin recorded in ADR-004, still Proposed for team acceptance |
 | API and validation | FastAPI + Pydantic v2 | Implemented for the local fixture slice; broader platform use remains Proposed |
 | Relational records/audit | PostgreSQL | Proposed |
-| IAM graph | Neo4j | Accepted direction, implementation unverified |
-| Graph analytics | Neo4j GDS | Optional; use only for defined experiments |
+| IAM graph | PostgreSQL snapshot-scoped graph tables | Proposed in the [whole-product schema](24_WHOLE_PRODUCT_SCHEMA_PROPOSAL.md); not migrated. Earlier Neo4j direction is superseded, not an accepted dependency. |
+| Graph analytics | Bounded in-process traversal first | Fixture implementation exists; Neo4j GDS is deferred unless a measured need emerges. |
 | Background jobs | Redis-backed worker | Deferred until synchronous slice works |
-| UI | React-based frontend with graph visualization | Proposed; framework/library not frozen |
+| UI | React/Vite analyst and foundry portal | Implemented for fixture/curation slices; real-account graph visualization and IT handoff remain proposed. |
 | Local orchestration | Docker Compose | Proposed |
 
-Redis, GDS, an LLM provider, and a complex frontend are not required to prove the first vertical slice. Add them when a measured need exists.
+Redis, GDS, and an LLM provider are not required to prove the first vertical slice. Add them only when a measured need exists. The AWS collector remains read-only and unimplemented; the proposed [inventory handoff](27_AWS_INVENTORY_HANDOFF_CONTRACT.md) is not a live observation.
 
 ## Responsibility boundaries
 
@@ -90,4 +90,3 @@ Redis, GDS, an LLM provider, and a complex frontend are not required to prove th
 3. **Live AWS:** sensitive, read-only target; use least privilege and redact account-specific data.
 4. **Sandbox:** intentionally vulnerable and potentially costly; isolate, authorize, budget, and destroy.
 5. **Browser/UI:** untrusted rendering boundary; escape source text and never render generated HTML unsafely.
-

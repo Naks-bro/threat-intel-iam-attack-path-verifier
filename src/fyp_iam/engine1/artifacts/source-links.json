@@ -1,0 +1,67 @@
+{
+  "association": "local-curated",
+  "license_note": "Local curated associations. Not an official joint publication and not an approved rule.",
+  "links": [
+    {
+      "left_id": "T1078",
+      "left_kind": "mitre-attack",
+      "right_id": "CNAS-3",
+      "right_kind": "owasp-cloud"
+    },
+    {
+      "left_id": "T1078.001",
+      "left_kind": "mitre-attack",
+      "right_id": "CNAS-3",
+      "right_kind": "owasp-cloud"
+    },
+    {
+      "left_id": "T1078.004",
+      "left_kind": "mitre-attack",
+      "right_id": "CNAS-3",
+      "right_kind": "owasp-cloud"
+    },
+    {
+      "left_id": "T1098",
+      "left_kind": "mitre-attack",
+      "right_id": "CNAS-3",
+      "right_kind": "owasp-cloud"
+    },
+    {
+      "left_id": "T1098.001",
+      "left_kind": "mitre-attack",
+      "right_id": "CNAS-3",
+      "right_kind": "owasp-cloud"
+    },
+    {
+      "left_id": "T1098.003",
+      "left_kind": "mitre-attack",
+      "right_id": "CNAS-3",
+      "right_kind": "owasp-cloud"
+    },
+    {
+      "left_id": "T1098.004",
+      "left_kind": "mitre-attack",
+      "right_id": "CNAS-3",
+      "right_kind": "owasp-cloud"
+    },
+    {
+      "left_id": "CVE-2018-9057",
+      "left_kind": "nvd",
+      "right_id": "CNAS-7",
+      "right_kind": "owasp-cloud"
+    },
+    {
+      "left_id": "CVE-2020-16250",
+      "left_kind": "nvd",
+      "right_id": "CNAS-7",
+      "right_kind": "owasp-cloud"
+    },
+    {
+      "left_id": "CVE-2022-2385",
+      "left_kind": "nvd",
+      "right_id": "CNAS-7",
+      "right_kind": "owasp-cloud"
+    }
+  ],
+  "schema_version": "0.1"
+}

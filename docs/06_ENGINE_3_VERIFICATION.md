@@ -1,5 +1,7 @@
 # Engine 3 — Attack-Path Discovery and Verification
 
+**Status:** bounded search and fixture-only verification exist. Real-account authorization evaluation, IAM Policy Simulator calls, sandbox validation, and durable analysis runs are **not implemented**. The pipeline and criteria below describe the target unless marked as implemented.
+
 ## Purpose
 
 Engine 3 combines approved structural rules with a validated IAM graph snapshot, discovers bounded candidate paths, evaluates available authorization evidence, and records an honest verification status.
@@ -61,6 +63,11 @@ mapped lab steps succeed -> verified_in_mapped_sandbox
 
 A sandbox result verifies only the mapped scenario under its recorded configuration. It does not prove the same path in every account.
 
+Sarvesh’s 2026-10-09 Terraform-plus-Pathrunner branch proposal is evaluated in
+[docs/28_ENGINE_3_BRANCH_WALK.md](28_ENGINE_3_BRANCH_WALK.md). The arbitrary
+three-hop “become the Lambda role” example is **not feasible**. An offline
+branch walker with mocked adapters is implemented and does not call AWS.
+
 ## Acceptance criteria
 
 - Positive, negative, cyclic, duplicate, over-depth, timeout, and missing-context fixtures pass.
@@ -69,9 +76,35 @@ A sandbox result verifies only the mapped scenario under its recorded configurat
 - Sandbox execution is disabled by default and impossible without explicit environment configuration.
 - Cleanup status is visible and failed cleanup is treated as a high-priority operational incident.
 
+## Scoped release consumer (local foundation)
+
+`engine3/releases.py:analyze_published_release` obtains a fresh stable release
+through a trusted current-export loader before each analysis. It revalidates the
+portable envelope, target id/scope and synthetic snapshot metadata. Experimental
+records cannot satisfy this stable-only contract. The loader must use Engine 1's
+current export operation, never cached JSON. This is point-in-time gating, not
+proof of origin, distributed revocation or a signature.
+
+Real/lab verifier release policy remains unconfigured. The foundry's first family
+uses `target_is_iam_user`, now supported by the fixture matcher for the narrow
+additional-credentials example; that does not evaluate real AWS authorization.
+Generic fixture `analyze` is not a freshness-enforcing foundry gateway. See
+ADR-015 for tested scope and limits.
+
 ## Local fixture adapter (implemented)
 
-The code in `src/fyp_iam/engine3/` is the first adapter. It is not the Policy Simulator and it cannot run a sandbox.
+The code in `src/fyp_iam/engine3/` is the first adapter. It is not the Policy Simulator and it cannot run a sandbox. `analyze` now rejects snapshots without an explicit synthetic profile; the local API returns `422 local_fixture_only` for a real-account profile. This marker prevents accidental misuse, **not** spoofing by a caller who controls the payload. A future real-account verifier needs a distinct, pinned snapshot/release and an evidence-aware verdict rather than reusing `supported_by_fixture`.
+
+## Synthetic what-if preview (local-only)
+
+`engine3/what_if.py` compares an unchanged synthetic fixture with a hypothetical
+copy that omits one named graph edge. The read-only
+`POST /v1/analyses/fixtures/{case_id}/what-if` route accepts only an `edge_id`;
+the Investigation demo exposes it for the credential-creation fixture. The
+response reports candidate-path counts before and after, including whether a
+search bound made the comparison incomplete. This neither edits an AWS policy
+nor establishes effective permissions or verified risk reduction. It is not
+available for real-account snapshots, and no database record is written.
 
 Search is bounded breadth-first search. Explicit-deny edges are traversable; the verdict is applied afterwards. A repeated node or edge ends that walk. Limits and ordering are recorded in ADR-004.
 
@@ -85,4 +118,3 @@ otherwise                         -> supported_by_fixture
 ```
 
 `required_capabilities` are not evaluated. Unknown precondition types are reported and skipped. Sandbox execution has no code path in this adapter.
-

@@ -1,0 +1,14 @@
+{
+  "artifact_id": "attack-t1548-assume-chain",
+  "excerpt": "Local curated pin for technique T1548. The structural IAM pattern is chosen by the code allowlist. This excerpt is evidence text.",
+  "excerpt_location": "excerpt",
+  "external_id": "T1548",
+  "framework": "mitre-attack",
+  "license_note": "Cites a MITRE ATT&CK technique identifier. This file is a project-local pin. Runtime code does not download it.",
+  "official_reference": "https://attack.mitre.org/techniques/T1548/",
+  "retrieved_at": "2026-10-02T12:00:00Z",
+  "schema_version": "0.1",
+  "source_name": "mitre-attack",
+  "source_version": "local-pin-2026-10-02",
+  "technique_name": "Abuse Elevation Control Mechanism"
+}

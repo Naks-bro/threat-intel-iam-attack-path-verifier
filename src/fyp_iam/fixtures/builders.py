@@ -65,10 +65,12 @@ def make_edge(
     effect: AuthorizationEffect = AuthorizationEffect.allow,
     conditions: dict[str, str] | None = None,
     confidence: EdgeConfidence = EdgeConfidence.deterministic,
+    iam_action: str | None = None,
 ) -> GraphEdge:
     return GraphEdge(
         edge_id=edge_id,
         edge_type=edge_type,
+        iam_action=iam_action,
         source_id=source_id,
         target_id=target_id,
         derivation="policy_analysis",

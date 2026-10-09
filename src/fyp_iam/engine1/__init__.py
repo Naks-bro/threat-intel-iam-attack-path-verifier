@@ -1,5 +1,8 @@
-"""Engine 1 boundary.
+"""Engine 1 local intake.
 
-CTI ingestion and rule authoring are not implemented in this slice.
-Engine 3 accepts only already approved rule fixtures.
+One pinned ATT&CK technique can be normalized, proposed, and exported after a
+human approval event. Pinned MITRE, OWASP, NVD, and CISA KEV records can also
+form source nodes. Strength counts distinct source families. The automated join
+stores a compact catalog for this system. Remote fetches and model calls are
+not part of request handling.
 """
